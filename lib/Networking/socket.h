@@ -9,18 +9,17 @@
 #define PORT 8080
 
 
-typedef struct socket_t{
+typedef struct socket{
     struct sockaddr_in _address;
-    int _sockfd;
-    int backlog;
-}Socket;
+    u32 _sockfd;
+    u32 _backlog;
+}socket_t;
 
 void socket_init(
-    Socket* sock,
+    socket_t* sock,
     ip_addr_t ip_addr,
     in_port_t port,
-    int backlog);
+    u32 backlog);
 
-void socket_listen(Socket* socket);
-
-
+void socket_listen(socket_t* socket);
+void get_addr_info(struct sockaddr_in* client_addr);

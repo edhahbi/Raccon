@@ -1,9 +1,13 @@
-#include "Socket.h"
+#include "socket.h"
+#include "evl.h"
 
 int main(){
 
-    Socket s;
+    socket_t s;
     socket_init(&s,"127.0.0.1",8080,10);
     socket_listen(&s);
+    event_loop_t evl;
+    init_event_loop(&evl,&s,EPOLLIN | EPOLLOUT);
+    start_event_loop(&evl);
     return 0;
 }

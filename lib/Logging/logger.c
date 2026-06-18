@@ -1,5 +1,6 @@
 #include "logger.h"
 
+static int file_d;
 
 void Log(
     loglevel level,
@@ -14,7 +15,7 @@ void Log(
     vsnprintf(message,sizeof(message),fmt,args);
 
     char time_header[TIME_HEADER_SIZE];
-
+    
     sprintf(
         time_header,
         "%04d/%02d/%02d %02d:%02d:%02d: - ",
