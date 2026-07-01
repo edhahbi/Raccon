@@ -1,71 +1,50 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(Raccon C)
+project(MyProject LANGUAGES C)
 
-add_compile_definitions(_GNU_SOURCE)
-
-set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD 23)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
-add_library(logging STATIC
-    lib/Logging/logger.c
+# Default to Debug if no build type is specified
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)
+endif()
+
+# Collect source files
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
+    "${PROJECT_SOURCE_DIR}/src/*.c"
 )
 
-target_include_directories(logging
-    PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}/lib/Logging
+# Collect headers (for IDE visibility only)
+file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS
+    "${PROJECT_SOURCE_DIR}/include/*.h"
 )
 
-add_library(networking STATIC
-    lib/Networking/socket.c
-    lib/Networking/conn.c
+# Test executable
+add_executable(test
+    test/test.c
+    ${SOURCES}
+    ${HEADERS}
 )
 
-target_include_directories(networking
-    PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}/lib/Logging
-        ${CMAKE_CURRENT_SOURCE_DIR}/lib/Networking
+target_include_directories(test PRIVATE
+    ${PROJECT_SOURCE_DIR}
+    ${PROJECT_SOURCE_DIR}/include
 )
 
-add_library(eventloop STATIC 
-    Eventloop/evl.c
+target_compile_options(test PRIVATE
+    -Wall
+    -Wextra
+    -Wpedantic
 )
 
-target_include_directories(eventloop
-    PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}/Eventloop
-        ${CMAKE_CURRENT_SOURCE_DIR}/lib/Networking
-        ${CMAKE_CURRENT_SOURCE_DIR}/lib/Logging
+# Debug flags
+target_compile_options(test PRIVATE
+    $<$<CONFIG:Debug>:-g3 -O0>
 )
 
-target_link_libraries(networking
-    PUBLIC
-        logging
-)
-
-target_link_libraries(eventloop
-    PUBLIC
-        networking
-)
-
-add_executable(test 
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/test.c
-)
-
-target_include_directories(test
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}/lib/Networking
-        ${CMAKE_CURRENT_SOURCE_DIR}/lib/Logging
-        ${CMAKE_CURRENT_SOURCE_DIR}/Eventloop
-)
-
-target_link_libraries(test
-    PRIVATE
-        networking
-        eventloop
+# Release flags
+target_compile_options(test PRIVATE
+    $<$<CONFIG:Release>:-O3>
 )
