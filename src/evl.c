@@ -1,4 +1,5 @@
 #include "evl.h"
+#include "dispatcher.h"
 
 static event_t ev_config;
 
@@ -16,61 +17,55 @@ void init_event_loop(event_loop_t *evl, socket_t *listen_sock, u32 event_flags)
 {
     if ((evl->_epollfd = epoll_create1(0)) == -1)
     {
-        err("init_event_loop : epoll_create1 failure");
+        LOG_ERROR("failed to create epoll instance with epoll_create1");
         exit(EXIT_FAILURE);
     }
     evl->_flags = event_flags;
     evl->_listensock = listen_sock;
 
     if(socket_add(evl,evl->_listensock->_sockfd) == -1){
-        err("init_event_loop: socket_add failure");
+        LOG_ERROR("failed to register listening socket %d with epoll", evl->_listensock->_sockfd);
         exit(EXIT_FAILURE);
     }
-
 }
 
-void handle_accept(event_loop_t* evl, size_t connIdx)
+void handle_accept(event_loop_t* evl, int sockfd)
 {
-    int sockfd = evl->_events[connIdx].data.fd;
-    conn_t* conn = &evl->_conns[connIdx];
-
     int client = socket_accept(sockfd);
-    if(client <= 0){
-        err("handle_accept: socket_accept failure");
+    if(client < 0){
+        LOG_ERROR("failed to accept a client connection from listening socket %d", sockfd);
         return;
     }
+
+    conn_t* conn = &evl->_conns[client];
+    conn_init(conn);
 
     if(socket_add(evl,client) == -1){
-        err("handle_accept: add_socket failure");
+        LOG_ERROR("failed to register accepted client socket %d with epoll", client);
         return;
     }
-    conn_init(conn,client);
 
-    info("socket %d with accepted successfully",client);
+    LOG_INFO("accepted client socket %d and added it to the connection table", client);
 }
 
-void try_handle_request(event_loop_t* evl, size_t connIdx){
-    buff* inc = &evl->_conns[connIdx]._ctx._inc_ctx;
-    // try parse command 
-}
-
-void handle_read(event_loop_t* evl,size_t connIdx){
-    conn_t* conn = &evl->_conns[connIdx];
-    Conn_state_t state = buff_read(conn->_socketfd,&conn->_ctx._inc_ctx);
+void handle_request(event_loop_t* evl,int sockfd){
+    conn_t* conn = &evl->_conns[sockfd];
+    conn_state_t state = buffer_write(sockfd,&conn->_conn_ctx.incoming);
 
     if(state == CONN_ERROR || state == CONN_CLOSED){
-        close(conn->_socketfd);
-        if(socket_remove(evl,conn->_socketfd) == -1){
-            err("handle_read: socket_remove failure");
+        if(socket_remove(evl,sockfd) == -1){
+            LOG_ERROR("failed to remove socket %d from epoll after read state %d", sockfd, state);
         }
+        close(sockfd);
         conn_reset(conn);
     }else{
-        try_handle_request(evl,connIdx);
+        dispatch(conn);
     }
 }
 
 void start_event_loop(event_loop_t *evl)
 {
+    // TODO correct the usage of i since it doesn't necessarly correspond to the right correction 
     for (;;)
     {
         u32 nfds = epoll_wait(evl->_epollfd, evl->_events, MAX_EVENTS, NO_TIMEOUT);
@@ -81,12 +76,12 @@ void start_event_loop(event_loop_t *evl)
             u32 flags = evl->_events[i].events;
             if (sockfd == evl->_listensock->_sockfd)
             {
-                handle_accept(evl, i);
+                handle_accept(evl, sockfd);
             }else{
                 if(flags & EPOLLIN){
-                    handle_read(evl,i);
+                    handle_request(evl,sockfd);
                 }else if(flags & EPOLLOUT){
-                    //handle_write(evl, i);
+                    //handle_response(evl, i);
                 }
             }
             

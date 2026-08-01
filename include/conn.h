@@ -1,21 +1,15 @@
 #pragma once
 
 #include "common.h"
-#include "buff.h"
-#include "conn_state.h"
-
-typedef struct conn_ctx
-{
-    buff _inc_ctx;
-    buff _out_ctx;
-} conn_ctx_t;
+#include "conn_ctx.h"
+#include "parser_ctx.h"
 
 typedef struct conn
 {
-    u32 _socketfd;
-    u32 _flags;
-    conn_ctx_t _ctx;
+    bool _inuse; // for later optimisation:
+    conn_ctx_t _conn_ctx;
+    parser_ctx _parser_ctx;
 } conn_t;
 
-void conn_init(conn_t *conn, u32 socketfd);
+void conn_init(conn_t *conn);
 void conn_reset(conn_t *conn);

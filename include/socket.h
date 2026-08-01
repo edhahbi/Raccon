@@ -1,6 +1,7 @@
 #pragma once
 #define _GNU_SOURCE
 #include "common.h"
+#include "ipv4.h"
 #include <netinet/in.h>
 #include <stdlib.h>
 #include <sys/socket.h>
@@ -24,4 +25,4 @@ void socket_init(
 
 void socket_listen(socket_t *socket);
 int socket_accept(int socketfd);
-void get_addr_info(addr_ipv4 *client_addr);
+ipv4_header get_addr_info(addr_ipv4 *client_addr);

@@ -9,29 +9,27 @@
 #define YELLOW_COLOR "\033[0;33m"
 #define RED_COLOR "\033[0;31m"
 
-#define TIME_HEADER_SIZE 512
+#define TIME_HEADER_SIZE 128
 #define BUFFER_SIZE 1024
 
-typedef enum
-{
-    INFO,
-    DEBUG,
-    WARN,
-    ERROR
-} loglevel;
-
-void debug(
-    const char *fmt,
+void Log(
+    const char* file,
+    const char* func,
+    int line,
+    const char* loglevel,
+    const char* logcolor,
+    const char *fmt,    
     ...);
 
-void warn(
-    const char *fmt,
-    ...);
+#define LOG_DEBUG(fmt,...) \
+    Log(__FILE__,__func__,__LINE__,"DBG",CYAN_COLOR,fmt __VA_OPT__(,) __VA_ARGS__)
 
-void err(
-    const char *fmt,
-    ...);
+#define LOG_INFO(fmt,...) \
+    Log(__FILE__,__func__,__LINE__,"INF",GREEN_COLOR,fmt __VA_OPT__(,) __VA_ARGS__)
 
-void info(
-    const char *fmt,
-    ...);
+#define LOG_WARN(fmt,...) \
+    Log(__FILE__,__func__,__LINE__,"WRN",YELLOW_COLOR,fmt __VA_OPT__(,) __VA_ARGS__)
+
+#define LOG_ERROR(fmt,...) \
+    Log(__FILE__,__func__,__LINE__,"ERR",RED_COLOR,fmt __VA_OPT__(,) __VA_ARGS__)
+
