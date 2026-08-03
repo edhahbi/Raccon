@@ -49,6 +49,7 @@ void parse_crlf(){
 }
 
 void parse_simple_string(){
+    parser_index++;
     u32 last_index = parser_index;
 
     while (parser_index < end_index && buffer_ptr[parser_index] !='\r')
@@ -86,14 +87,19 @@ u32 parse_integer(){
 }
 
 void parse_bulk_string(){
+    if(buffer_ptr[parser_index] != '$'){
+        ps->result = PARSER_ERROR;
+        return;
+    }
+    parser_index++;
     u32 len = parse_integer();
     if(ps->result == PARSER_OK){
         if(parser_index + len > end_index){
             ps->result = PARSER_INCOMPLETE;
-        }else if(buffer_ptr[parser_index + len - 1] != '\r'){
+        }else if(buffer_ptr[parser_index + len] != '\r'){
             ps->result = PARSER_ERROR;
         }else if(ps->result == PARSER_OK){
-            parser_index += len;
+            parser_index += len + 1;
             parse_crlf();
             if(ps->result == PARSER_OK){
                 token tt = create_token(STRING,buffer_ptr + parser_index - len,len);
@@ -104,18 +110,19 @@ void parse_bulk_string(){
 }
 
 void parse_multi_bulk_string(){
+    parser_index++;
     u32 len = parse_integer();
     if(ps->result == PARSER_OK){
         size_t i = 0;
         while(i < len && ps->result == PARSER_OK){
             parse_bulk_string();
+            i++;
         }
     }
 }
 
 void __parse(){
     char c = buffer_ptr[parser_index];
-    parser_index++;
     switch (c)
     {
     case '+' :

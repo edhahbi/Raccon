@@ -16,6 +16,7 @@ void socket_init(socket_t* sock, ip_addr_t ip_addr, in_port_t port, u32 backlog)
     }
     if(bind(sock->_sockfd,(struct sockaddr*)&sock->_address,sizeof(sock->_address))){
         LOG_ERROR("failed to bind socket %d to %s:%d", sock->_sockfd, ip_addr, port);
+        exit(EXIT_FAILURE);
     }
     sock->_backlog = MIN(backlog,10);
     LOG_INFO("initialized socket %d for %s:%d with backlog %u", sock->_sockfd, ip_addr, port, sock->_backlog);

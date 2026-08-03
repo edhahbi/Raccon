@@ -50,7 +50,7 @@ void handle_accept(event_loop_t* evl, int sockfd)
 
 void handle_request(event_loop_t* evl,int sockfd){
     conn_t* conn = &evl->_conns[sockfd];
-    conn_state_t state = buffer_write(sockfd,&conn->_conn_ctx.incoming);
+    conn_state_t state = buffer_read(sockfd,&conn->_conn_ctx.incoming);
 
     if(state == CONN_ERROR || state == CONN_CLOSED){
         if(socket_remove(evl,sockfd) == -1){
@@ -61,6 +61,13 @@ void handle_request(event_loop_t* evl,int sockfd){
     }else{
         dispatch(conn);
     }
+}
+
+void handle_response(event_loop_t* evl, int sockfd){
+    conn_t* conn = &evl->_conns[sockfd];
+    conn_state_t state = buffer_write(sockfd, &conn->_conn_ctx.outcoming);
+
+    
 }
 
 void start_event_loop(event_loop_t *evl)
@@ -81,7 +88,7 @@ void start_event_loop(event_loop_t *evl)
                 if(flags & EPOLLIN){
                     handle_request(evl,sockfd);
                 }else if(flags & EPOLLOUT){
-                    //handle_response(evl, i);
+                    handle_response(evl, i);
                 }
             }
             

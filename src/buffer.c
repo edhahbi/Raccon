@@ -23,7 +23,7 @@ void buffer_resize(buffer* buff,size_t new_capacity){
     buff->capacity = new_capacity;
 }
 
-conn_state_t buffer_write(int socketfd, buffer *buff){
+conn_state_t buffer_read(int socketfd, buffer *buff){
     for(;;){
         if(buffer_remaining(buff) == 0){
             buffer_resize(buff, buff->capacity * 2);
@@ -48,7 +48,6 @@ conn_state_t buffer_write(int socketfd, buffer *buff){
         
 
         if(nbytes == -1){
-            LOG_DEBUG("%d",errno);
             // there is no more data
             if(errno == EAGAIN || errno == EWOULDBLOCK)
                 return CONN_WAIT;
@@ -64,10 +63,48 @@ conn_state_t buffer_write(int socketfd, buffer *buff){
     }
 }
 
-void buffer_sync(buffer* buff,size_t ps_index){
-    if(ps_index == buff->offset){
+conn_state_t buffer_write(int socketfd, buffer *buff){
+    size_t tail = 0; 
+    for(;;){
+        if(tail == buff->offset){
+            return CONN_WAIT;
+        }
+
+        ssize_t nbytes = send(
+            socketfd,
+            buff->ptr + tail,
+            buff->offset - tail,
+            0
+        );
+
+        if(nbytes > 0){
+            tail+= nbytes;
+            continue;
+        }
+
+        if(nbytes == 0){
+            return CONN_CLOSED;
+        }
+
+        if(nbytes == -1){
+            if(errno == EAGAIN || errno == EWOULDBLOCK){
+                return CONN_WAIT;
+            }
+
+            else if(errno == EINTR){
+                continue;
+            }
+
+            return CONN_ERROR;
+        }
+    }
+
+    buffer_sync(buff, tail);
+}
+void buffer_sync(buffer* buff,size_t index){
+    if(index == buff->offset){
         buff->offset = 0;
     }else{
-        memmove(buff->ptr, buff->ptr + ps_index, buff->offset - ps_index);
+        memmove(buff->ptr, buff->ptr + index, buff->offset - index);
     }
 }

@@ -25,5 +25,6 @@ static inline size_t buffer_remaining(const buffer *buff) { return buff->capacit
 static inline size_t buffer_consumed(const buffer *buff) { return buff->offset; }
 static inline void buffer_reset(buffer *buff) { buff->offset = 0; }
 
-conn_state_t buffer_write(int socketfd, buffer *buff);
+conn_state_t buffer_read(int sockfd, buffer* buff);
+conn_state_t buffer_write(int sockfd, buffer *buff);
 void buffer_sync(buffer* buff, size_t ps_index);
