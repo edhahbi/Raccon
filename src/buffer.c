@@ -63,6 +63,16 @@ conn_state_t buffer_read(int socketfd, buffer *buff){
     }
 }
 
+void buffer_sync(buffer* buff,size_t index){
+    if(index == buff->offset){
+        buff->offset = 0;
+    }else{
+        memmove(buff->ptr, buff->ptr + index, buff->offset - index);
+    }
+}
+
+// functions for outcoming buffer 
+
 conn_state_t buffer_write(int socketfd, buffer *buff){
     size_t tail = 0; 
     for(;;){
@@ -101,10 +111,14 @@ conn_state_t buffer_write(int socketfd, buffer *buff){
 
     buffer_sync(buff, tail);
 }
-void buffer_sync(buffer* buff,size_t index){
-    if(index == buff->offset){
-        buff->offset = 0;
-    }else{
-        memmove(buff->ptr, buff->ptr + index, buff->offset - index);
+
+
+void buffer_push(buffer* buff, const char* response, size_t size){
+
+    if(size > buff->capacity){
+        buffer_resize(buff,size);
     }
+
+    memmove(buff->ptr, response, size);
+    buff->offset += size;
 }

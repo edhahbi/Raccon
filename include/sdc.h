@@ -9,7 +9,5 @@ typedef struct string{
     size_t size;
 }string;
 
-
-string sdc_init(const char* ptr, size_t size);
-void sdc_join(string* sdc,const char* ptr, size_t size);
+string sdc_init(const char* ptr,const size_t size);
 void sdc_free(string* sdc);

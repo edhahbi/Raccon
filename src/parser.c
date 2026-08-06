@@ -1,128 +1,148 @@
 #include "parser.h"
 
-static parser_ctx* ps;
-
-static size_t parser_index;
-static size_t end_index;
-static char* buffer_ptr;
+parser_state* ps;
+command* cmd;
 
 bool valid_begin(){
-    char c = buffer_ptr[parser_index];
+    char c = ps->buffer_ptr[ps->parser_index];
     return c=='$' || c=='+' || c=='*';
 }
 
 void skip_error(){
-    while (parser_index < end_index && !valid_begin()){
-        parser_index++;
+    while (ps->parser_index < ps->end_index && !valid_begin()){
+        ps->parser_index++;
     }
 }
 
-token create_token(token_type token_type, void* token_val, size_t token_size){
-    token t = (token){.type = token_type};
-    switch (token_type)
-    {
-    case INTEGER:
-        memcpy(&t.token_value.integer, token_val, sizeof(u32));
-        break;
-    
-    case STRING:
-        t.token_value.string = sdc_init(token_val,token_size);
-        break;
-
-    default:
-        LOG_ERROR("Invalid Token type");
-        exit(EXIT_FAILURE);
-        break;
+// be aware function introduces side effects (parser_index advancement)
+void consume_char(char c){
+    if(ps->parser_index == ps->end_index){
+        ps->result = PARSER_INCOMPLETE;
     }
-    return t;
+    else if(ps->buffer_ptr[ps->parser_index] != c){
+        ps->result = PARSER_ERROR;
+    }else{
+        ps->result = PARSER_OK;
+        ps->parser_index++;
+    }
+}
+
+// be aware function introduces side effects (parser_index advancement)
+int consume_integer(char c){
+    if(ps->parser_index == ps->end_index){
+        ps->result = PARSER_INCOMPLETE;
+    }
+    else if(!isdigit(c)){
+        ps->result = PARSER_ERROR;
+    }else{
+        ps->result = PARSER_OK;
+    }
+    int integer = c - '0';
+    ps->parser_index++;
+    return integer;
 }
 
 void parse_crlf(){
-    if(parser_index == end_index){
-        ps->result = PARSER_INCOMPLETE;
-    }else if(buffer_ptr[parser_index] != '\n'){
-        ps->result = PARSER_ERROR;
-    }else{
-        parser_index++;
-        ps->result = PARSER_OK;
-    }
+    
+    consume_char('\r');
+
+    if(ps->result != PARSER_OK)
+        return;
+
+    consume_char('\n');
 }
 
 void parse_simple_string(){
-    parser_index++;
-    u32 last_index = parser_index;
+    consume_char('+');
 
-    while (parser_index < end_index && buffer_ptr[parser_index] !='\r')
-        parser_index++;
-    
-    if(parser_index == end_index){
-        ps->result = PARSER_INCOMPLETE;
-    }else{
-        parser_index++;
-        parse_crlf();
-        if(ps->result == PARSER_OK){
-            token tt = create_token(STRING,buffer_ptr + last_index ,parser_index - last_index);
-            token_array_push(&ps->tokens_array,tt);
-        }
+    u32 last_index = ps->parser_index;
+
+    while (ps->result == PARSER_OK && ps->buffer_ptr[ps->parser_index] !='\r'){
+        consume_char(ps->buffer_ptr[ps->parser_index]);
     }
+        
+    
+    if(ps->result != PARSER_OK)
+        return;
+    
+
+    parse_crlf();
+
+    if(ps->result != PARSER_OK)
+        return;
+    
+
+    arg arg = create_arg(STRING,ps->buffer_ptr + last_index ,ps->parser_index - last_index);
+    push_arg(cmd,arg);
 }
 
-u32 parse_integer(){
+u32 parse_len(){
     u32 integer = 0;
-    while (parser_index < end_index && isdigit(buffer_ptr[parser_index])){
-        integer = (integer * 10) + (buffer_ptr[parser_index] - '0');
-        parser_index++;
+    while (ps->result == PARSER_OK){
+        integer = (integer * 10) + consume_integer(ps->buffer_ptr[ps->parser_index]);
     }
 
-    if(parser_index == end_index){
-        ps->result = PARSER_INCOMPLETE;
-    }else if(buffer_ptr[parser_index] == '\r'){
-        parser_index++;
-        parse_crlf();
-    }else{
-        ps->result = PARSER_ERROR;
+    if(ps->result != PARSER_OK){
+        return 0;
+    }
+
+    parse_crlf();
+
+    if(ps->result != PARSER_OK){
+        return 0;
     }
 
     return integer;
 }
 
 void parse_bulk_string(){
-    if(buffer_ptr[parser_index] != '$'){
-        ps->result = PARSER_ERROR;
+
+    consume_char('$');
+
+    u32 len = parse_len();
+    if(ps->result != PARSER_OK)
         return;
+
+    size_t i = 0;
+    size_t arg_offset = ps->parser_index;
+    while (i<len && ps->result == PARSER_OK){
+        consume_char(ps->buffer_ptr[ps->parser_index]);
+        i++;
     }
-    parser_index++;
-    u32 len = parse_integer();
-    if(ps->result == PARSER_OK){
-        if(parser_index + len > end_index){
-            ps->result = PARSER_INCOMPLETE;
-        }else if(buffer_ptr[parser_index + len] != '\r'){
-            ps->result = PARSER_ERROR;
-        }else if(ps->result == PARSER_OK){
-            parser_index += len + 1;
-            parse_crlf();
-            if(ps->result == PARSER_OK){
-                token tt = create_token(STRING,buffer_ptr + parser_index - len,len);
-                token_array_push(&ps->tokens_array, tt);
-            }
-        }
-    }
+    
+    if(ps->result != PARSER_OK)
+        return;
+
+    parse_crlf();
+
+    if(ps->result != PARSER_OK)
+        return;
+    
+    arg arg = create_arg(STRING,ps->buffer_ptr + arg_offset, len);
+    push_arg(cmd,arg);
 }
 
 void parse_multi_bulk_string(){
-    parser_index++;
-    u32 len = parse_integer();
-    if(ps->result == PARSER_OK){
-        size_t i = 0;
-        while(i < len && ps->result == PARSER_OK){
-            parse_bulk_string();
-            i++;
-        }
+    consume_char('*');
+    u32 len = parse_len();
+
+    if(ps->result != PARSER_OK)
+        return;
+    
+    if(len > MAX_RESP_COMMAND_ARGS){
+        ps->result = PARSER_ERROR;
+        return;         
+    }
+
+    size_t i = 0;
+    while(i < len && ps->result == PARSER_OK){
+        parse_bulk_string();
+        i++;
     }
 }
 
-void __parse(){
-    char c = buffer_ptr[parser_index];
+void parse_begin(){
+    char c = ps->buffer_ptr[ps->parser_index];
     switch (c)
     {
     case '+' :
@@ -141,26 +161,31 @@ void __parse(){
     }
 }
 
+void handle_parser_result(buffer* incoming){
+    if(ps->result == PARSER_INCOMPLETE)
+        return;
 
-void handle_state(conn_t* connection){
     if(ps->result == PARSER_ERROR){
         skip_error();
-        buffer_sync(&connection->_conn_ctx.incoming,parser_index);
-    }else if(ps->result == PARSER_OK){
-        buffer_sync(&connection->_conn_ctx.incoming,parser_index);
     }
+
+    buffer_sync(incoming,ps->parser_index);
 }
 
-void parse(conn_t* connection){
-    buffer* incoming = &connection->_conn_ctx.incoming;
-    ps = &connection->_parser_ctx;
-    
-    parser_index = 0;
-    end_index = incoming->offset;
-    buffer_ptr = incoming->ptr;
+void parse(parser_ctx* parser_ctx, buffer* incoming){
+    ps = &parser_ctx->state;
+    cmd = &parser_ctx->command;
 
-    __parse();
-    handle_state(connection);
+    parser_state_init(
+        ps,
+        incoming->ptr,
+        incoming->offset);
+
+    parse_begin();
+
+    handle_parser_result(incoming);
+
+    parser_state_reset(ps);
 }
 
 

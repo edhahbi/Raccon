@@ -1,6 +1,6 @@
 #include "sdc.h"
 
-string sdc_init(const char* ptr, size_t size){
+string sdc_init(const char* ptr, const size_t size){
     string s; 
     char* mem = malloc(size);
     
@@ -13,12 +13,8 @@ string sdc_init(const char* ptr, size_t size){
     s.size = size;
 
     memcpy(s.ptr,ptr,size);
-}
-
-void sdc_join(string* sdc,const char* ptr, size_t size){
-    sdc->ptr = realloc(sdc->ptr, sdc->size + size);
-    sdc->ptr += size;
-    memcpy(sdc->ptr + sdc->size, ptr, size);
+    
+    return s;
 }
 
 void sdc_free(string* sdc){

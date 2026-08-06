@@ -1,6 +1,7 @@
 #pragma once
 #include "common.h"
 #include "conn_state.h"
+#include "sdc.h"
 #include <sys/socket.h>
 #include <stdlib.h>
 #include <string.h>
@@ -28,3 +29,4 @@ static inline void buffer_reset(buffer *buff) { buff->offset = 0; }
 conn_state_t buffer_read(int sockfd, buffer* buff);
 conn_state_t buffer_write(int sockfd, buffer *buff);
 void buffer_sync(buffer* buff, size_t ps_index);
+void buffer_push(buffer* buff ,const char* response, const size_t size);
