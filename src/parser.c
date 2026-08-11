@@ -1,7 +1,7 @@
 #include "parser.h"
 
-parser_state* ps;
-command* cmd;
+static parser_state* ps;
+static command cmd;
 
 bool valid_begin(){
     char c = ps->buffer_ptr[ps->parser_index];
@@ -55,7 +55,7 @@ void parse_crlf(){
 void parse_simple_string(){
     consume_char('+');
 
-    u32 last_index = ps->parser_index;
+    size_t last_index = ps->parser_index;
 
     while (ps->result == PARSER_OK && ps->buffer_ptr[ps->parser_index] !='\r'){
         consume_char(ps->buffer_ptr[ps->parser_index]);
@@ -73,7 +73,7 @@ void parse_simple_string(){
     
 
     arg arg = create_arg(STRING,ps->buffer_ptr + last_index ,ps->parser_index - last_index);
-    push_arg(cmd,arg);
+    push_arg(&cmd,arg);
 }
 
 u32 parse_len(){
@@ -119,7 +119,7 @@ void parse_bulk_string(){
         return;
     
     arg arg = create_arg(STRING,ps->buffer_ptr + arg_offset, len);
-    push_arg(cmd,arg);
+    push_arg(&cmd,arg);
 }
 
 void parse_multi_bulk_string(){
@@ -172,9 +172,10 @@ void handle_parser_result(buffer* incoming){
     buffer_sync(incoming,ps->parser_index);
 }
 
-void parse(parser_ctx* parser_ctx, buffer* incoming){
+command parse(parser_ctx* parser_ctx, buffer* incoming){
     ps = &parser_ctx->state;
-    cmd = &parser_ctx->command;
+
+    init_command(&cmd);
 
     parser_state_init(
         ps,
@@ -186,6 +187,8 @@ void parse(parser_ctx* parser_ctx, buffer* incoming){
     handle_parser_result(incoming);
 
     parser_state_reset(ps);
+
+    return cmd;
 }
 
 

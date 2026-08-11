@@ -2,5 +2,4 @@
 
 void parser_ctx_init(parser_ctx* parser_ctx){
     parser_ctx->result = PARSER_OK;
-    init_command(&parser_ctx->command);
 }

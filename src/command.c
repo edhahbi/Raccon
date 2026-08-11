@@ -9,17 +9,16 @@ arg create_arg(arg_type arg_type, void* arg_val, size_t arg_size){
     switch (arg_type)
     {
     case INTEGER:
-        memcpy(&a.arg_value.integer, arg_val, sizeof(u32));
+        memcpy(&a.value.integer, arg_val, sizeof(u32));
         break;
     
     case STRING:
-        a.arg_value.string = sdc_init(arg_val,arg_size);
+        a.value.string = sdc_init(arg_val,arg_size);
         break;
 
     default:
         LOG_ERROR("Invalid arg type");
         exit(EXIT_FAILURE);
-        break;
     }
     return a;
 }

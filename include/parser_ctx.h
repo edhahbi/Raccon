@@ -7,7 +7,6 @@
 #include "parser_state.h"
 
 typedef struct parser_ctx{
-    command command;
     parser_result result;
     parser_state state;
 }parser_ctx;

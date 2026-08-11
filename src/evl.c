@@ -3,13 +3,13 @@
 
 static event_t ev_config;
 
-int socket_add(event_loop_t* evl,u32 sockfd){
+int socket_add(const event_loop_t* evl,u32 sockfd){
     ev_config.data.fd = sockfd;
     ev_config.events = evl->_flags;
     return epoll_ctl(evl->_epollfd,EPOLL_CTL_ADD,sockfd,&ev_config);
 }
 
-int socket_remove(event_loop_t* evl, u32 sockfd){
+int socket_remove(const event_loop_t* evl, u32 sockfd){
     return epoll_ctl(evl->_epollfd,EPOLL_CTL_DEL,sockfd,NULL);   
 }
 
@@ -78,7 +78,6 @@ void handle_response(event_loop_t* evl, int sockfd){
 
 void start_event_loop(event_loop_t *evl)
 {
-    // TODO correct the usage of i since it doesn't necessarly correspond to the right correction 
     for (;;)
     {
         u32 nfds = epoll_wait(evl->_epollfd, evl->_events, MAX_EVENTS, NO_TIMEOUT);
@@ -87,18 +86,15 @@ void start_event_loop(event_loop_t *evl)
         {
             int sockfd = evl->_events[i].data.fd;
             u32 flags = evl->_events[i].events;
-            if (sockfd == evl->_listensock->_sockfd)
-            {
+            if (sockfd == evl->_listensock->_sockfd){
                 handle_accept(evl, sockfd);
-            }else{
-                if(flags & EPOLLIN){
-                    handle_request(evl,sockfd);
-                }else if(flags & EPOLLOUT){
-                    handle_response(evl, sockfd);
-                }
+            }else if(flags & EPOLLIN){
+                handle_request(evl,sockfd);
+            }else if(flags & EPOLLOUT){
+                handle_response(evl, sockfd);
             }
-            
-        }
+        }    
     }
 }
+
 

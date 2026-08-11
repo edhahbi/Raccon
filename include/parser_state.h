@@ -14,5 +14,5 @@ typedef struct parser_state{
     parser_result result;
 }parser_state;
 
-void parser_state_init(parser_state* parser_state ,char* b_ptr, u32 end_idx);
+void parser_state_init(parser_state* parser_state ,char* b_ptr, size_t end_idx);
 void parser_state_reset(parser_state* parser_state);

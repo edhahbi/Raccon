@@ -4,5 +4,7 @@
 #include "buffer.h"
 #include <ctype.h>
 
-void parse(parser_ctx*, buffer*);
+#define MESSAGE_LENGTH_MAX 1024
+
+command parse(parser_ctx*, buffer*);
 

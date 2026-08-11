@@ -92,24 +92,20 @@ conn_state_t buffer_write(int socketfd, buffer *buff){
             continue;
         }
 
-        if(nbytes == 0){
+        if(nbytes == 0)
             return CONN_CLOSED;
+
+        if(nbytes == -1 && errno == EAGAIN){
+            buffer_sync(buff,tail);
+            return CONN_WAIT;
         }
 
-        if(nbytes == -1){
-            if(errno == EAGAIN || errno == EWOULDBLOCK){
-                return CONN_WAIT;
-            }
-
-            else if(errno == EINTR){
-                continue;
-            }
-
+        if(nbytes == -1 && errno == EINTR)
+            continue;
+        
+        else
             return CONN_ERROR;
-        }
     }
-
-    buffer_sync(buff, tail);
 }
 
 

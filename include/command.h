@@ -15,14 +15,16 @@ typedef enum arg_type
     STRING
 } arg_type;
 
+typedef union arg_value
+{
+    size_t integer;
+    string string;
+} arg_value;
+
 typedef struct arg
 {
     arg_type type;
-    union arg_value
-    {
-        u32 integer;
-        string string;
-    } arg_value;
+    arg_value value;
 } arg;
 
 typedef struct command
