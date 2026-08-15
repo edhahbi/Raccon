@@ -68,6 +68,7 @@ void buffer_sync(buffer* buff,size_t index){
         buff->offset = 0;
     }else{
         memmove(buff->ptr, buff->ptr + index, buff->offset - index);
+        buff->offset = buff->offset - index;
     }
 }
 
@@ -77,8 +78,11 @@ conn_state_t buffer_write(int socketfd, buffer *buff){
     size_t tail = 0; 
     for(;;){
         if(tail == buff->offset){
+            buffer_sync(buff,tail);
             return CONN_WAIT;
         }
+            
+        
 
         ssize_t nbytes = send(
             socketfd,
@@ -118,3 +122,5 @@ void buffer_push(buffer* buff, const char* response, size_t size){
     memmove(buff->ptr, response, size);
     buff->offset += size;
 }
+
+

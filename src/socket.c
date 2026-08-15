@@ -1,6 +1,6 @@
 #include "socket.h"
 
-void socket_init(socket_t* sock, ip_addr_t ip_addr, in_port_t port, u32 backlog){
+void socket_init(socket_t* sock, const char* ip_addr, in_port_t port, u32 backlog){
     sock->_sockfd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
     if(sock->_sockfd == -1){
         LOG_ERROR("failed to create a non-blocking TCP socket");
@@ -14,6 +14,17 @@ void socket_init(socket_t* sock, ip_addr_t ip_addr, in_port_t port, u32 backlog)
         LOG_ERROR("failed to convert IP address %s into network format", ip_addr);
         exit(EXIT_FAILURE);
     }
+
+    int opt = 1;
+
+    setsockopt(
+        sock->_sockfd,
+        SOL_SOCKET,
+        SO_REUSEADDR,
+        &opt,
+        sizeof(opt)
+    );
+    
     if(bind(sock->_sockfd,(struct sockaddr*)&sock->_address,sizeof(sock->_address))){
         LOG_ERROR("failed to bind socket %d to %s:%d", sock->_sockfd, ip_addr, port);
         exit(EXIT_FAILURE);
@@ -22,7 +33,7 @@ void socket_init(socket_t* sock, ip_addr_t ip_addr, in_port_t port, u32 backlog)
     LOG_INFO("initialized socket %d for %s:%d with backlog %u", sock->_sockfd, ip_addr, port, sock->_backlog);
 }   
 
-void socket_listen(socket_t* sock){
+void socket_listen(const socket_t* sock){
     if(listen(sock->_sockfd, sock->_backlog)){
 
         LOG_ERROR("failed to listen on socket %d for %s:%d",
@@ -39,8 +50,8 @@ void socket_listen(socket_t* sock){
 }
 
 
-ipv4_header get_addr_info(addr_ipv4* client_addr){
-    u32 ip_addr = client_addr->sin_addr.s_addr;
+ipv4_header get_addr_info(const addr_ipv4* client_addr){
+    const in_addr_t ip_addr = client_addr->sin_addr.s_addr;
     return (ipv4_header){
         .b1 = (ip_addr >> 24),
         .b2 = (ip_addr >> 16) & 0xFF,

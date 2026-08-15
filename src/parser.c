@@ -1,8 +1,5 @@
 #include "parser.h"
 
-static parser_state* ps;
-static command cmd;
-
 bool valid_begin(){
     char c = ps->buffer_ptr[ps->parser_index];
     return c=='$' || c=='+' || c=='*';
@@ -72,7 +69,7 @@ void parse_simple_string(){
         return;
     
 
-    arg arg = create_arg(STRING,ps->buffer_ptr + last_index ,ps->parser_index - last_index);
+    arg arg = create_arg(RESP_STRING,ps->buffer_ptr + last_index ,ps->parser_index - last_index);
     push_arg(&cmd,arg);
 }
 
@@ -118,7 +115,7 @@ void parse_bulk_string(){
     if(ps->result != PARSER_OK)
         return;
     
-    arg arg = create_arg(STRING,ps->buffer_ptr + arg_offset, len);
+    arg arg = create_arg(RESP_STRING,ps->buffer_ptr + arg_offset, len);
     push_arg(&cmd,arg);
 }
 
@@ -128,17 +125,13 @@ void parse_multi_bulk_string(){
 
     if(ps->result != PARSER_OK)
         return;
-    
-    if(len > MAX_RESP_COMMAND_ARGS){
-        ps->result = PARSER_ERROR;
-        return;         
-    }
 
-    size_t i = 0;
-    while(i < len && ps->result == PARSER_OK){
+    for (size_t i = 0; i < len; i++){
         parse_bulk_string();
-        i++;
+        if(ps->result != PARSER_OK)
+            return;
     }
+    
 }
 
 void parse_begin(){
@@ -157,6 +150,7 @@ void parse_begin(){
         parse_multi_bulk_string();
         break;
     default:
+        ps->result = PARSER_ERROR;
         break;
     }
 }
@@ -175,7 +169,7 @@ void handle_parser_result(buffer* incoming){
 command parse(parser_ctx* parser_ctx, buffer* incoming){
     ps = &parser_ctx->state;
 
-    init_command(&cmd);
+    command_init(&cmd);
 
     parser_state_init(
         ps,

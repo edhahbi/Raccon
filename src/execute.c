@@ -3,15 +3,15 @@
 static buffer* out;
 static execution_ctx exec_ctx;
 
-string* get_command_arg_string(const size_t idx){
+static inline string* get_command_arg_string(const size_t idx){
     return &exec_ctx.cmd->argv[idx].value.string;
 }
 
-size_t* get_command_arg_integer(const size_t idx){
+static inline size_t* get_command_arg_integer(const size_t idx){
     return &exec_ctx.cmd->argv[idx].value.integer;
 }
 
-arg_type get_arg_type(const size_t idx){
+static inline arg_type get_arg_type(const size_t idx){
     return exec_ctx.cmd->argv[idx].type;
 }
 
@@ -19,7 +19,7 @@ void detect_cmd_type(){
     arg_type type = get_arg_type(0);
     const string* sdc = get_command_arg_string(0);
 
-    if(type == INTEGER){
+    if(type == RESP_INTEGER){
         exec_ctx.result = INVALID;
         return;
     }
@@ -28,6 +28,7 @@ void detect_cmd_type(){
         exec_ctx.cmd_type = PING;
     }
 
+    // TODO complete SET GET DEL commands
 }
 
 void exec_cmd(){
@@ -36,7 +37,7 @@ void exec_cmd(){
     }
 }
 
-exec_result exec(const command* cmd, buffer* outcoming){  
+exec_result exec(command* cmd, buffer* outcoming){
 
     excution_ctx_init(&exec_ctx, cmd);
     out = outcoming;
@@ -48,4 +49,6 @@ exec_result exec(const command* cmd, buffer* outcoming){
     }
 
     exec_cmd();
+
+    return exec_ctx.result;
 }

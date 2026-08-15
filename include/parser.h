@@ -8,3 +8,5 @@
 
 command parse(parser_ctx*, buffer*);
 
+static parser_state* ps;
+static command cmd;

@@ -7,7 +7,6 @@
 #define MIN(x,y) (x)>(y)?(y):(x)
 #define MAX(x,y) (x)>(y)?(x):(y)
 
-#define ip_addr_t const char*
 #define u8 uint8_t
 #define u16 uint16_t
 #define u32 uint32_t

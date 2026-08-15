@@ -24,4 +24,4 @@ void init_event_loop(event_loop_t *event_loop, socket_t *server_socket, u32 even
 void start_event_loop(event_loop_t *event_loop);
 void handle_accept(event_loop_t *evl, int sockfd);
 void handle_request(event_loop_t* evl,int sockfd);
-//void handle_response(conn_t* connection, size_t connIdx);
+void handle_response(event_loop_t* evl, int sockfd);

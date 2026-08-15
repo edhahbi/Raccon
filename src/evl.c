@@ -22,7 +22,6 @@ void init_event_loop(event_loop_t *evl, socket_t *listen_sock, u32 event_flags)
     }
     evl->_flags = event_flags;
     evl->_listensock = listen_sock;
-
     if(socket_add(evl,evl->_listensock->_sockfd) == -1){
         LOG_ERROR("failed to register listening socket %d with epoll", evl->_listensock->_sockfd);
         exit(EXIT_FAILURE);

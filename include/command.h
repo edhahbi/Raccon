@@ -1,6 +1,5 @@
 #pragma once
 #include "sdc.h"
-#define MAX_RESP_COMMAND_ARGS 4
 
 typedef enum command_type{
     PING,
@@ -11,8 +10,8 @@ typedef enum command_type{
 
 typedef enum arg_type
 {
-    INTEGER,
-    STRING
+    RESP_INTEGER,
+    RESP_STRING
 } arg_type;
 
 typedef union arg_value
@@ -30,9 +29,9 @@ typedef struct arg
 typedef struct command
 {
     int argc;
-    arg argv[MAX_RESP_COMMAND_ARGS];
+    arg* argv;
 } command;
 
-static inline void init_command(command* command){ command->argc = 0;}
+void command_init(command* command);
 arg create_arg(arg_type arg_type, void *arg_val, size_t arg_size);
 void push_arg(command *command, arg arg);

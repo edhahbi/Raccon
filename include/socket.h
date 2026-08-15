@@ -19,10 +19,10 @@ typedef struct socket
 
 void socket_init(
     socket_t *sock,
-    ip_addr_t ip_addr,
+    const char* ip_addr,
     in_port_t port,
     u32 backlog);
 
-void socket_listen(socket_t *socket);
+void socket_listen(const socket_t *socket);
 int socket_accept(int socketfd);
-ipv4_header get_addr_info(addr_ipv4 *client_addr);
+ipv4_header get_addr_info(const addr_ipv4 *client_addr);
