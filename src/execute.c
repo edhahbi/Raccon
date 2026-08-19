@@ -101,6 +101,7 @@ void detect_cmd_type()
 
     if(valid_del_cmd()){
         exec_ctx.cmd_type = DEL;
+        return;
     }
     exec_ctx.result = INVALID;
 }

@@ -84,7 +84,7 @@ string from_int_to_srt(u64 uinteger){
     return sdc;
 }
 
-void sdc_merge(string* dest,string* const src){
+void sdc_merge(string* dest,const string* src){
     dest->ptr = realloc(dest->ptr, dest->size + src->size);
     memmove(dest->ptr + dest->size, src, src->size);
     dest->size += src->size;
