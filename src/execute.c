@@ -63,6 +63,16 @@ bool valid_get_cmd(){
     return true;
 }
 
+// DEL KEY
+bool valid_del_cmd(){
+    const string* sdc = get_command_arg_string(0);
+
+    if(exec_ctx.cmd->argc != 2 || memcmp(sdc->ptr, "DEL", sdc->size))
+        return false;
+    
+    return true;
+}
+
 static inline bool valid_command_begining() { return get_arg_type(0) == RESP_INTEGER ? false : true; }
 void detect_cmd_type()
 {
@@ -87,6 +97,10 @@ void detect_cmd_type()
     if(valid_get_cmd()){
         exec_ctx.cmd_type = GET;
         return;
+    }
+
+    if(valid_del_cmd()){
+        exec_ctx.cmd_type = DEL;
     }
     exec_ctx.result = INVALID;
 }
@@ -203,6 +217,18 @@ void exec_GET(){
     sdc_free(&value);
 }
 
+void exec_DEL(){
+    dict_key key = create_key_cmd(1);
+
+    if(dict_try_del(key)){
+        buffer_push(out,"+1\r\n",INTEGER_LEN);
+        return;
+    }
+    
+    buffer_push(out,"+0\r\n",INTEGER_LEN);
+}
+
+
 void exec_cmd()
 {
     switch (exec_ctx.cmd_type)
@@ -218,6 +244,11 @@ void exec_cmd()
     case GET:
         exec_GET();
         break;
+    
+    case DEL:
+        exec_DEL();
+        break;
+
     default:
         exec_ctx.result = INVALID;
         break;
@@ -233,10 +264,8 @@ exec_result exec(command *cmd, buffer *outcoming)
     detect_cmd_type();
 
     if (exec_ctx.result == INVALID)
-    {
         return INVALID;
-    }
-
+    
     exec_cmd();
 
     return exec_ctx.result;

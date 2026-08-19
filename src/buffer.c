@@ -121,4 +121,10 @@ void buffer_push(buffer* buff, const char* response, size_t size){
     buff->offset += size;
 }
 
+void buffer_free(buffer* buff){
+    free(buff->ptr);
+    buff->capacity = 0;
+    buff->offset = 0;
+}
+
 

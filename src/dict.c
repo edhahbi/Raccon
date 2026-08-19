@@ -101,21 +101,24 @@ bool try_del_entry(dictht* ht,dict_key key,size_t hash){
     return false;
 }
 
-void dict_del(dict_key key){
+bool dict_try_del(dict_key key){
     size_t hash_fnv1 = fnv_1a(key);
     size_t hash_t0 = get_hash(db.ht[0]->size, hash_fnv1);
     
     if(probably_in_t0(hash_t0) && try_del_entry(db.ht[0],key,hash_t0)){
         db.ht[0]->used--;
-        return;
+        dict_rehash(true);
+        return true;
     }
     
     size_t hash_t1 = get_hash(db.ht[1]->size, hash_fnv1);
     if(try_del_entry(db.ht[1],key,hash_t1)){
         db.ht[1]->used--;
-        return; 
+        dict_rehash(true);
+        return true; 
     }
-    dict_rehash(true);
+
+    return false;
 }
 
 void resize(dictht* ht, size_t new_size){

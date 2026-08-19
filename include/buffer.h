@@ -22,6 +22,7 @@ typedef struct
 } buffer;
 
 buffer buffer_init(size_t size);
+void buffer_free(buffer* buff);
 static inline size_t buffer_remaining(const buffer *buff) { return buff->capacity - buff->offset; }
 static inline size_t buffer_consumed(const buffer *buff) { return buff->offset; }
 static inline void buffer_reset(buffer *buff) { buff->offset = 0; }
