@@ -6,9 +6,8 @@
 
 typedef struct conn
 {
-    bool _inuse; // for later optimisation:
+    bool _inuse; // for later optimisation: reuse the same connection instead of creating another one
     conn_ctx_t _conn_ctx;
-    parser_ctx _parser_ctx;
 } conn_t;
 
 void conn_init(conn_t *conn);

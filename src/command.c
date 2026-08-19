@@ -1,14 +1,13 @@
 #include "command.h"
 
 void command_init(command* command){
-    command->argv = malloc(sizeof(arg));
     command->argc = 0;
+    command->argv = NULL;
 }
 
 inline void push_arg(command* command, arg arg){
-    command->argc++;
-    command->argv = realloc(command->argv,command->argc * sizeof(arg));
-    command->argv[command->argc] = arg;
+    command->argv = realloc(command->argv,(command->argc+1) * sizeof(arg));
+    command->argv[command->argc++] = arg;
 }
 
 arg create_arg(arg_type arg_type, void* arg_val, size_t arg_size){
@@ -16,7 +15,7 @@ arg create_arg(arg_type arg_type, void* arg_val, size_t arg_size){
     switch (arg_type)
     {
     case RESP_INTEGER:
-        memcpy(&a.value.integer, arg_val, sizeof(u32));
+        a.value.integer = *((size_t*)arg_val);
         break;
     
     case RESP_STRING:
@@ -28,4 +27,9 @@ arg create_arg(arg_type arg_type, void* arg_val, size_t arg_size){
         exit(EXIT_FAILURE);
     }
     return a;
+}
+
+void command_cleanup(command* cmd){
+    free(cmd->argv);
+    cmd->argc = 0;
 }

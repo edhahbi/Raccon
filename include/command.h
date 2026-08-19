@@ -28,10 +28,11 @@ typedef struct arg
 
 typedef struct command
 {
-    int argc;
+    size_t argc;
     arg* argv;
 } command;
 
-void command_init(command* command);
-arg create_arg(arg_type arg_type, void *arg_val, size_t arg_size);
-void push_arg(command *command, arg arg);
+void command_init(command*);
+void command_cleanup(command*);
+arg create_arg(arg_type, void *, size_t);
+void push_arg(command *, arg);

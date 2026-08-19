@@ -1,42 +1,11 @@
 #pragma once
 #include "command.h"
+#include "dict_tv.h"
 #include "sdc.h"
 #include "fnv_1a.h"
 
 #define DEFAULT_TABLE_SIZE 8 // always power of 2
 #define DEFAULT_RESIZE_SHIFT 1
-
-typedef struct property property;
-
-typedef struct object
-{
-    property* properties;
-    size_t size;
-} object;
-
-
-typedef union dict_value
-{
-    object object;
-    u64 uint64;
-    i64 int64;
-    double d;
-} dict_value;
-
-typedef enum value_type
-{
-    OBJECT,
-    INT,
-    UINT,
-    DOUBLE,
-    STRING
-} value_type;
-
-typedef struct dict_tv
-{
-    dict_value value;
-    value_type type;
-} dict_tv;
 
 typedef struct property{
     string field;

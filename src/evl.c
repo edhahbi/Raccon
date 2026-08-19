@@ -77,6 +77,7 @@ void handle_response(event_loop_t* evl, int sockfd){
 
 void start_event_loop(event_loop_t *evl)
 {
+    dict_init();
     for (;;)
     {
         u32 nfds = epoll_wait(evl->_epollfd, evl->_events, MAX_EVENTS, NO_TIMEOUT);
@@ -92,7 +93,8 @@ void start_event_loop(event_loop_t *evl)
             }else if(flags & EPOLLOUT){
                 handle_response(evl, sockfd);
             }
-        }    
+        }  
+        dict_rehash(false);  
     }
 }
 

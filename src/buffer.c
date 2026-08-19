@@ -81,8 +81,6 @@ conn_state_t buffer_write(int socketfd, buffer *buff){
             buffer_sync(buff,tail);
             return CONN_WAIT;
         }
-            
-        
 
         ssize_t nbytes = send(
             socketfd,

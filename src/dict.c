@@ -65,6 +65,7 @@ void dict_set(dict_key key, dict_tv tv){
         dict_entry* const new_entry = create_entry(key,tv);
         add_entry(db.ht[db.rehasing_flag],final_hash,new_entry);
         db.ht[db.rehasing_flag]->used++;
+        dict_rehash(true);
     }else{
         dict_tv* tv_ptr = ((dict_tv*)dict_tv_result.value);
         tv_ptr->type = tv.type;
@@ -114,12 +115,11 @@ void dict_del(dict_key key){
         db.ht[1]->used--;
         return; 
     }
-
-    
+    dict_rehash(true);
 }
 
-void resize(dictht* ht, double resize_factor){
-    ht->size *= resize_factor;
+void resize(dictht* ht, size_t new_size){
+    ht->size = new_size;
     ht->table = realloc(db.ht[1]->table, sizeof(dict_entry*) * ht->size);
 }
 
@@ -132,48 +132,52 @@ static void stop_rehashing(){
     db.ht[1] = swap; 
 }
 
-void rehash(){
-    
-    immediate_rehash:
-        if(db.rehasing_flag){
-            const dict_entry* entry_t0 = *dict_get_block(0,db.rehasing);
-            dict_entry* entry_t1;
+void dict_insert_in_block(dict_entry** block, dict_entry* entry_t0){
+    if((*block) == NULL){
+        (*block) = entry_t0;
+        return;
+    }
 
-            while (entry_t0){
-                size_t hash_t1 = get_hash(db.ht[1]->size,fnv_1a(entry_t1->key)); 
-                entry_t1 = *dict_get_block(1,hash_t1);
+    dict_entry* entry_t1 = *block;
+    while(entry_t1->next) entry_t1 = entry_t1->next;
 
-                if(!entry_t1){
-                    *dict_get_block(1,hash_t1) = entry_t0;
-                }
-                
-                else{
-                    while (entry_t1->next)
-                        entry_t1 = entry_t1->next;
-                    entry_t1->next = entry_t0;
-                    entry_t1 = entry_t0;
-                }
-                entry_t0 = entry_t0->next;
-                entry_t1->next = NULL;
-            }
+    entry_t1->next = entry_t0;
+}
 
-            db.rehasing++;
+void dict_rehash(bool start_rehash){
 
-            if(db.rehasing == db.ht[0]->size){
-                stop_rehashing();
-            }
-            return;
-        }
+    if(!start_rehash) return;
 
     size_t br = db.ht[0]->size >> BIG_REHASH_SHIFT;
     if(db.ht[0]->used >= br){
+        db.rehasing_flag = 1;
         resize(db.ht[1],db.ht[1]->size << DEFAULT_RESIZE_SHIFT);
-        goto immediate_rehash;
     }
 
     size_t sr = db.ht[0]->size >> SMALL_REHASH_SHIT;
     if(db.ht[1]->used <= sr){
+        db.rehasing = 1;
         resize(db.ht[1],db.ht[1]->size >> DEFAULT_RESIZE_SHIFT);
-        goto immediate_rehash;
+    }
+
+    if(db.rehasing_flag){
+        dict_entry** block_t0 = dict_get_block(0,db.rehasing);
+        dict_entry* entry_t0 = *block_t0;
+
+        while (entry_t0){
+            size_t hash_t1 = get_hash(db.ht[1]->size,fnv_1a(entry_t0->key)); 
+            dict_entry** block_t1 = dict_get_block(1,hash_t1);
+            dict_insert_in_block(block_t1,entry_t0);
+            entry_t0 = entry_t0->next;
+        }
+
+        *block_t0 = NULL;
+
+        db.rehasing++;
+
+        if(db.rehasing == db.ht[0]->size){
+            stop_rehashing();
+        }
+        return;
     }
 }
