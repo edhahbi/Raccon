@@ -20,7 +20,7 @@ static void test_insert_and_lookup(void){
 
     dict_tv value = {
         .type = UINT,
-        .value.int64 = 50
+        .value.uint64_pt = &(u64){50}
     };
 
     dict_set(key, value);
@@ -29,7 +29,7 @@ static void test_insert_and_lookup(void){
     expect_true(result.state != NOTFOUND, "inserted key should be found");
     expect_true(result.value != NULL, "lookup should return a value pointer");
     expect_true(((dict_tv*)result.value)->type == UINT, "stored value type should be INT");
-    expect_true(((dict_tv*)result.value)->value.int64 == 50, "stored integer value should match");
+    expect_true(*(((dict_tv*)result.value)->value.uint64_pt) == 50, "stored integer value should match");
 }
 
 static void test_update_existing_key(void){
@@ -39,12 +39,12 @@ static void test_update_existing_key(void){
         .value = key_bytes
     };
 
-    dict_set(key, (dict_tv){ .type = UINT, .value.int64 = 10 });
-    dict_set(key, (dict_tv){ .type = UINT, .value.int64 = 99 });
+    dict_set(key, (dict_tv){ .type = UINT, .value.uint64_pt = &(u64){10} });
+    dict_set(key, (dict_tv){ .type = UINT, .value.uint64_pt = &(u64){99} });
 
     search_result result = dict_try_get(key);
     expect_true(result.state != NOTFOUND, "updated key should still be found");
-    expect_true(((dict_tv*)result.value)->value.int64 == 99, "updated value should replace the previous one");
+    expect_true(*(((dict_tv*)result.value)->value.uint64_pt) == 99, "updated value should replace the previous one");
 }
 
 static void test_missing_key_is_not_found(void){
@@ -66,8 +66,8 @@ static void test_delete_removes_key(void){
         .value = key_bytes
     };
 
-    dict_set(key, (dict_tv){ .type = UINT, .value.int64 = 7 });
-    dict_del(key);
+    dict_set(key, (dict_tv){ .type = UINT, .value.uint64_pt = &(u64){7} });
+    dict_try_del(key);
 
     search_result result = dict_try_get(key);
     expect_true(result.state == NOTFOUND, "deleted key should no longer be found");

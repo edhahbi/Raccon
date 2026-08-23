@@ -25,4 +25,4 @@ void socket_init(
 
 void socket_listen(const socket_t *socket);
 int socket_accept(int socketfd);
-ipv4_header get_addr_info(const addr_ipv4 *client_addr);
+ipv4_header get_addr_info(const addr_ipv4 * const client_addr);

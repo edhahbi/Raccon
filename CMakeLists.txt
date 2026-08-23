@@ -28,7 +28,18 @@ add_executable(test
     ${HEADERS}
 )
 
+add_executable(dict_test
+    test/dict_test.c
+    ${SOURCES}
+    ${HEADERS}
+)
+
 target_include_directories(test PRIVATE
+    ${PROJECT_SOURCE_DIR}
+    ${PROJECT_SOURCE_DIR}/include
+)
+
+target_include_directories(dict_test PRIVATE
     ${PROJECT_SOURCE_DIR}
     ${PROJECT_SOURCE_DIR}/include
 )

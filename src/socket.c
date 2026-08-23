@@ -50,8 +50,9 @@ void socket_listen(const socket_t* sock){
 }
 
 
-ipv4_header get_addr_info(const addr_ipv4* client_addr){
-    const in_addr_t ip_addr = client_addr->sin_addr.s_addr;
+ipv4_header get_addr_info(const addr_ipv4* const client_addr){
+
+    in_addr_t ip_addr = client_addr->sin_addr.s_addr;
     return (ipv4_header){
         .b1 = (ip_addr >> 24),
         .b2 = (ip_addr >> 16) & 0xFF,
@@ -72,7 +73,7 @@ int socket_accept(int socketfd){
             header.b2,
             header.b3,
             header.b4,
-            ntohs(client_addr.sin_port)
+        ntohs(client_addr.sin_port)
         );
     }else{
         close(result);

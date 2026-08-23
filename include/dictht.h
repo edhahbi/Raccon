@@ -8,7 +8,7 @@
 #define DEFAULT_RESIZE_SHIFT 1
 
 typedef struct property{
-    string field;
+    string* field;
     dict_tv value;
 }property;
 

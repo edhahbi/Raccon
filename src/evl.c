@@ -1,5 +1,5 @@
 #include "evl.h"
-#include "dispatcher.h"
+#include "dispatch.h"
 
 static event_t ev_config;
 

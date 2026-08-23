@@ -1,23 +1,5 @@
 #include "execute.h"
 
-static buffer *out;
-static execution_ctx exec_ctx;
-
-static inline string *get_command_arg_string(const size_t idx)
-{
-    return &exec_ctx.cmd->argv[idx].value.string;
-}
-
-static inline size_t *get_command_arg_integer(const size_t idx)
-{
-    return &exec_ctx.cmd->argv[idx].value.integer;
-}
-
-static inline arg_type get_arg_type(const size_t idx)
-{
-    return exec_ctx.cmd->argv[idx].type;
-}
-
 bool valid_ping_cmd()
 {
     const string *sdc = get_command_arg_string(0);
@@ -46,8 +28,8 @@ bool valid_set_cmd()
         return false;
     
 
-    for (size_t arg_idx = 3; arg_idx < exec_ctx.cmd->argc; arg_idx += 2)
-        if (get_arg_type(arg_idx - 1) != RESP_STRING)
+    for (size_t arg_idx = 2; arg_idx < exec_ctx.cmd->argc; arg_idx += 2)
+        if (get_arg_type(arg_idx) != RESP_STRING)
             return false;
 
     return true;
@@ -124,39 +106,39 @@ dict_key create_key_cmd(size_t key_idx)
     }
 }
 
+dict_tv create_simple_tv_cmd(size_t tv_idx){
+    switch (get_arg_type(tv_idx)){
+
+    case RESP_INTEGER:
+        return (dict_tv){.type = UINT, .value.uint64_pt = get_command_arg_integer(tv_idx)};
+
+    case RESP_STRING:
+        return (dict_tv){.type = STRING, .value.str_pt = get_command_arg_string(tv_idx)};
+    
+    default:
+        LOG_ERROR("Unhandeled Type");
+        exit(1);
+    }
+}
+
 dict_tv create_tv_cmd(size_t tv_idx)
 {
-    dict_tv tv;
     if(exec_ctx.cmd->argc == 3){
-        switch (get_arg_type(tv_idx)){
-
-        case RESP_INTEGER:
-            tv.type = UINT;
-            tv.value.uint64 = *get_command_arg_integer(tv_idx);
-            break;
-
-        case RESP_STRING:
-            tv.type = STRING;
-            tv.value.str = *get_command_arg_string(tv_idx);
-            break;
-        
-        default:
-            LOG_ERROR("Unhandeled Type");
-            exit(1);
-        }
+        return create_simple_tv_cmd(tv_idx);
     }else{
+        dict_tv tv;
         size_t size = (exec_ctx.cmd->argc - 2) / 2;
         property *properties = malloc(sizeof(property) * size);
-        for (size_t i = tv_idx+1; i < size; i+=2){
-            properties[i] = (property){
-                .field = *get_command_arg_string(i),
-                .value = create_tv_cmd(i-1)
+        for (size_t prop = 0; prop < size; prop++){
+            properties[prop] = (property){
+                .field = get_command_arg_string(2*prop+2),
+                .value = create_tv_cmd(2*prop+3)
             };
         }
         tv.type = OBJECT;
-        tv.value.object = create_object(size,properties);
+        tv.value.object_pt = create_object(size,properties);
+        return tv;
     }
-    return tv;
 }
 
 void exec_PING(){ buffer_push(out, "+PONG\r\n", PONG_LEN);}
@@ -175,22 +157,22 @@ string from_dict_value_to_string(const dict_tv* tv){
     switch (tv->type)
     {
     case UINT:
-        return from_int_to_srt(tv->value.uint64);
+        return from_int_to_srt(*(tv->value.uint64_pt));
     
     case STRING:
-        return tv->value.str;
+        return *(tv->value.str_pt);
 
     case OBJECT:
-        object obj = tv->value.object;
+        const object* obj = tv->value.object_pt;
         string result = sdc_init(NULL,0);
         string sdc;
-        for (size_t prop_idx = 0; prop_idx < obj.size; prop_idx++){
-            sdc_merge(&result, &obj.properties[prop_idx].field);
+        for (size_t prop_idx = 0; prop_idx < obj->size; prop_idx++){
+            sdc_merge(&result, obj->properties[prop_idx].field);
             sdc_push(&result,' ');
-            sdc = from_dict_value_to_string(&obj.properties[prop_idx].value);
+            sdc = from_dict_value_to_string(&obj->properties[prop_idx].value);
             sdc_merge(&result, &sdc);
             sdc_free(&sdc);
-            if(prop_idx != obj.size-1){
+            if(prop_idx != obj->size-1){
                 sdc_push(&result,' ');
             }
         }

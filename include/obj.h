@@ -11,4 +11,4 @@ typedef struct object{
     size_t size;
 } object;
 
-object create_object(size_t, property* const);
+object* create_object(size_t, property* const);

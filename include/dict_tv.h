@@ -2,11 +2,11 @@
 #include "obj.h" 
 typedef union dict_value
 {
-    object object;
-    u64 uint64;
-    i64 int64;
-    double d;
-    string str;
+    object* object_pt;
+    u64* uint64_pt;
+    i64* int64_pt;
+    double* d_pt;
+    string* str_pt;
 } dict_value;
 
 typedef enum dict_type

@@ -1,8 +1,6 @@
 #include "parser.h"
 
-static parser_ctx* ps;
 
-static parser_result* ps_res;
 
 bool valid_begin(){
     char c = ps->buffer_ptr[ps->parser_index];

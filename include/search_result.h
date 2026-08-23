@@ -7,6 +7,6 @@ typedef enum search_state{
 } search_state;
 
 typedef struct search_result{
-    void* value;
+    void* const value;
     search_state state;
 }search_result;
