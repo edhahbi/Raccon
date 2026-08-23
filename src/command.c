@@ -15,7 +15,8 @@ arg create_arg(arg_type arg_type, void* arg_val, size_t arg_size){
     switch (arg_type)
     {
     case RESP_INTEGER:
-        a.value.integer = *((size_t*)arg_val);
+        a.value.integer = malloc(sizeof(u64));
+        *a.value.integer = *(u64*)arg_val;
         break;
     
     case RESP_STRING:

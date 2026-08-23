@@ -16,7 +16,7 @@ typedef enum arg_type
 
 typedef union arg_value
 {
-    u64 integer;
+    u64* integer;
     string string;
 } arg_value;
 
