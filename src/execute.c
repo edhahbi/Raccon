@@ -94,7 +94,7 @@ dict_key create_key_cmd(size_t key_idx)
     switch (type)
     {
     case RESP_INTEGER:
-        return (dict_key){.len = sizeof(size_t), .value = get_command_arg_integer(1)};
+        return (dict_key){.len = sizeof(size_t), .value = get_command_arg_integer(key_idx)};
 
     case RESP_STRING:
         string str = *get_command_arg_string(key_idx);
@@ -110,10 +110,10 @@ dict_tv create_simple_tv_cmd(size_t tv_idx){
     switch (get_arg_type(tv_idx)){
 
     case RESP_INTEGER:
-        return (dict_tv){.type = UINT, .value.uint64_pt = get_command_arg_integer(tv_idx)};
+        return (dict_tv){.type = UINT, .value = (dict_value*) get_command_arg_integer(tv_idx)};
 
     case RESP_STRING:
-        return (dict_tv){.type = STRING, .value.str_pt = get_command_arg_string(tv_idx)};
+        return (dict_tv){.type = STRING, .value = (dict_value*) get_command_arg_string(tv_idx)};
     
     default:
         LOG_ERROR("Unhandeled Type");
@@ -132,11 +132,11 @@ dict_tv create_tv_cmd(size_t tv_idx)
         for (size_t prop = 0; prop < size; prop++){
             properties[prop] = (property){
                 .field = get_command_arg_string(2*prop+2),
-                .value = create_tv_cmd(2*prop+3)
+                .value = create_simple_tv_cmd(2*prop+3)
             };
         }
         tv.type = OBJECT;
-        tv.value.object_pt = create_object(size,properties);
+        tv.value = (dict_value*) create_object(size,properties);
         return tv;
     }
 }
@@ -157,13 +157,13 @@ string from_dict_value_to_string(const dict_tv* tv){
     switch (tv->type)
     {
     case UINT:
-        return from_int_to_srt(*(tv->value.uint64_pt));
+        return from_int_to_srt(tv->value->uint64);
     
     case STRING:
-        return *(tv->value.str_pt);
+        return tv->value->str;
 
     case OBJECT:
-        const object* obj = tv->value.object_pt;
+        const object* obj = &tv->value->object;
         string result = sdc_init(NULL,0);
         string sdc;
         for (size_t prop_idx = 0; prop_idx < obj->size; prop_idx++){

@@ -22,40 +22,29 @@ file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS
 )
 
 # Test executable
-add_executable(test
-    test/test.c
+add_executable(evl_test
+    ${PROJECT_SOURCE_DIR}/tests/evl_test.c
     ${SOURCES}
     ${HEADERS}
 )
 
-add_executable(dict_test
-    test/dict_test.c
-    ${SOURCES}
-    ${HEADERS}
-)
-
-target_include_directories(test PRIVATE
+target_include_directories(evl_test PRIVATE
     ${PROJECT_SOURCE_DIR}
     ${PROJECT_SOURCE_DIR}/include
 )
 
-target_include_directories(dict_test PRIVATE
-    ${PROJECT_SOURCE_DIR}
-    ${PROJECT_SOURCE_DIR}/include
-)
-
-target_compile_options(test PRIVATE
+target_compile_options(evl_test PRIVATE
     -Wall
     -Wextra
     -Wpedantic
 )
 
 # Debug flags
-target_compile_options(test PRIVATE
+target_compile_options(evl_test PRIVATE
     $<$<CONFIG:Debug>:-g3 -O0>
 )
 
 # Release flags
-target_compile_options(test PRIVATE
+target_compile_options(evl_test PRIVATE
     $<$<CONFIG:Release>:-O3>
 )

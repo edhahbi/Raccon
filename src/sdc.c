@@ -1,20 +1,28 @@
 #include "sdc.h"
 
 string sdc_init(const char* ptr, const size_t size){
-    string s; 
-    char* mem = malloc(size);
-    
-    if(mem == NULL){
+    string s = {0};
+    if(size == 0){
+        s.ptr = calloc(1, 1);
+        if(s.ptr == NULL){
+            LOG_ERROR("couldn't allocate memory for string");
+            exit(EXIT_FAILURE);
+        }
+        s.size = 0;
+        return s;
+    }
+
+    s.ptr = malloc(size);
+    if(s.ptr == NULL){
         LOG_ERROR("couldn't allocate memory for string");
         exit(EXIT_FAILURE);
     }
 
-    s.ptr = mem;
     s.size = size;
 
     if(ptr != NULL)
-        memcpy(s.ptr,ptr,size);
-    
+        memcpy(s.ptr, ptr, size);
+
     return s;
 }
 
@@ -25,8 +33,15 @@ void sdc_free(string* sdc){
 }
 
 void sdc_push(string* sdc, char c){
-    sdc->ptr = realloc(sdc->ptr, ++sdc->size);
-    sdc->ptr[sdc->size - 1] = c;
+    char* new_ptr = realloc(sdc->ptr, sdc->size + 1);
+    if(new_ptr == NULL){
+        LOG_ERROR("couldn't reallocate string buffer");
+        exit(EXIT_FAILURE);
+    }
+
+    sdc->ptr = new_ptr;
+    sdc->ptr[sdc->size] = c;
+    sdc->size += 1;
 }
 
 char from_digit_to_char(int digit){
@@ -71,21 +86,35 @@ char from_digit_to_char(int digit){
 
 string from_int_to_srt(u64 uinteger){
     if(uinteger == 0)
-        return sdc_init("0",1);
-    
-    string sdc = sdc_init(NULL,1);
+        return sdc_init("0", 1);
 
-    while (uinteger){
-        int digit = uinteger % 10;
-        sdc_push(&sdc,from_digit_to_char(digit));
+    string sdc = sdc_init(NULL, 0);
+    char buffer[32];
+    size_t len = 0;
+
+    while (uinteger != 0){
+        buffer[len++] = from_digit_to_char((int)(uinteger % 10));
         uinteger /= 10;
     }
-    
+
+    for (size_t i = 0; i < len; ++i){
+        sdc_push(&sdc, buffer[len - 1 - i]);
+    }
+
     return sdc;
 }
 
-void sdc_merge(string* dest,const string* src){
-    dest->ptr = realloc(dest->ptr, dest->size + src->size);
-    memmove(dest->ptr + dest->size, src, src->size);
+void sdc_merge(string* dest, const string* src){
+    if(src == NULL || src->size == 0)
+        return;
+
+    char* new_ptr = realloc(dest->ptr, dest->size + src->size);
+    if(new_ptr == NULL){
+        LOG_ERROR("couldn't expand string buffer during merge");
+        exit(EXIT_FAILURE);
+    }
+
+    dest->ptr = new_ptr;
+    memcpy(dest->ptr + dest->size, src->ptr, src->size);
     dest->size += src->size;
 }

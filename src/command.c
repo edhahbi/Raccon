@@ -5,7 +5,7 @@ void command_init(command* command){
     command->argv = NULL;
 }
 
-inline void push_arg(command* command, arg arg){
+void push_arg(command* command, arg arg){
     command->argv = realloc(command->argv,(command->argc+1) * sizeof(arg));
     command->argv[command->argc++] = arg;
 }
