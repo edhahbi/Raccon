@@ -111,16 +111,16 @@ conn_state_t buffer_write(int socketfd, buffer *buff){
 }
 
 
-void buffer_push(buffer* buff, const char* response, size_t size){
+void buffer_push(buffer* buff, size_t size , const char* format, const void* response){
 
     if(size > buff->capacity){
         buffer_resize(buff,size);
     }
 
-    memmove(buff->ptr, response, size);
+    snprintf(buff->ptr,size,format,response);
+
     buff->offset += size;
 }
-
 void buffer_free(buffer* buff){
     free(buff->ptr);
     buff->capacity = 0;

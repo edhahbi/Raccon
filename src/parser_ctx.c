@@ -10,10 +10,8 @@ void parser_ctx_reset(parser_ctx* parser_state){
     parser_state->parser_index = 0;
     parser_state->end_index = 0;
     parser_state->buffer_ptr = NULL;
-    parser_state = PARSER_OK;
 }
 
 void parser_result_init(parser_result* parser_result){
     command_init(&parser_result->cmd);
-    parser_result->state = PARSER_OK;
 }

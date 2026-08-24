@@ -26,6 +26,32 @@ string sdc_init(const char* ptr, const size_t size){
     return s;
 }
 
+string* sdc_init1(const char* ptr, const size_t size){
+    string* s = malloc(sizeof(string));
+    if(size == 0){
+        s->ptr = calloc(1, 1);
+        if(s->ptr == NULL){
+            LOG_ERROR("couldn't allocate memory for string");
+            exit(EXIT_FAILURE);
+        }
+        s->size = 0;
+        return s;
+    }
+
+    s->ptr = malloc(size);
+    if(s->ptr == NULL){
+        LOG_ERROR("couldn't allocate memory for string");
+        exit(EXIT_FAILURE);
+    }
+
+    s->size = size;
+
+    if(ptr != NULL)
+        memcpy(s->ptr, ptr, size);
+
+    return s;
+}
+
 void sdc_free(string* sdc){
     free(sdc->ptr);
     sdc->ptr = NULL;
@@ -43,6 +69,23 @@ void sdc_push(string* sdc, char c){
     sdc->ptr[sdc->size] = c;
     sdc->size += 1;
 }
+
+void sdc_merge(string* dest, const string* src){
+    if(src == NULL || src->size == 0)
+        return;
+
+    char* new_ptr = realloc(dest->ptr, dest->size + src->size);
+    if(new_ptr == NULL){
+        LOG_ERROR("couldn't expand string buffer during merge");
+        exit(EXIT_FAILURE);
+    }
+
+    dest->ptr = new_ptr;
+    memcpy(dest->ptr + dest->size, src->ptr, src->size);
+    dest->size += src->size;
+}
+
+
 
 char from_digit_to_char(int digit){
 
@@ -84,37 +127,23 @@ char from_digit_to_char(int digit){
     }
 }
 
-string from_int_to_srt(u64 uinteger){
-    if(uinteger == 0)
+string from_int_to_str(i64 int64){
+    if(int64 == 0)
         return sdc_init("0", 1);
 
-    string sdc = sdc_init(NULL, 0);
-    char buffer[32];
-    size_t len = 0;
+    string sdc;
 
-    while (uinteger != 0){
-        buffer[len++] = from_digit_to_char((int)(uinteger % 10));
-        uinteger /= 10;
+    if(int64 < 0){
+        sdc = sdc_init("-", 1);
+        int64 *= -1;
     }
 
-    for (size_t i = 0; i < len; ++i){
-        sdc_push(&sdc, buffer[len - 1 - i]);
+    else sdc = sdc_init(NULL,0);
+
+    while (int64){
+        sdc_push(&sdc, from_digit_to_char((int)(int64 % 10)));
+        int64 /= 10;
     }
 
     return sdc;
-}
-
-void sdc_merge(string* dest, const string* src){
-    if(src == NULL || src->size == 0)
-        return;
-
-    char* new_ptr = realloc(dest->ptr, dest->size + src->size);
-    if(new_ptr == NULL){
-        LOG_ERROR("couldn't expand string buffer during merge");
-        exit(EXIT_FAILURE);
-    }
-
-    dest->ptr = new_ptr;
-    memcpy(dest->ptr + dest->size, src->ptr, src->size);
-    dest->size += src->size;
 }

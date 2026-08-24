@@ -1,11 +1,12 @@
 #pragma once
 #include "command.h"
-#include "dict_tv.h"
 #include "sdc.h"
-#include "fnv_1a.h"
 
 #define DEFAULT_TABLE_SIZE 8 // always power of 2
 #define DEFAULT_RESIZE_SHIFT 1
+
+typedef arg* dict_tv;
+typedef arg* dict_key;
 
 typedef struct property{
     string* field;

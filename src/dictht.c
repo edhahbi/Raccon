@@ -9,14 +9,14 @@ dictht* dict_ht_init(){
 }
 
 bool compare_keys(dict_key k1, dict_key k2){
-    if(k1.len != k2.len){
+    if(k1->value->str.size != k2->value->str.size){
         return false;
     }
 
-    u8* bytes_k1 = (u8*)k1.value;
-    u8* bytes_k2 = (u8*)k2.value;
+    u8* bytes_k1 = (u8*)k1->value->str.ptr;
+    u8* bytes_k2 = (u8*)k2->value->str.ptr;
 
-    for (size_t byte = 0; byte < k1.len; byte++){
+    for (size_t byte = 0; byte < k1->value->str.size; byte++){
        if(bytes_k1[byte] != bytes_k2[byte])
             return false;
     }

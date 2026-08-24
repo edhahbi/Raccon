@@ -1,4 +1,27 @@
 #include "dict.h"
+
+
+#define OFFSET 14695981039346656037ULL
+#define PRIME 1099511628211ULL
+
+
+size_t fnv_1a(const dict_key key){
+
+    if (key->type != RESP_STRING){
+        LOG_ERROR("unsupported key type");
+        exit(1);
+    }
+
+    u8* bytes = key->value->str.ptr;
+    size_t len = key->value->str.size; 
+    u64 hash = OFFSET;
+    for (size_t byte = 0; byte < len; byte++){
+        hash ^= bytes[byte];
+        hash *= PRIME;
+    }
+    return hash;
+}
+
 void dict_init()
 {
     db.rehasing_flag = false;
@@ -44,13 +67,13 @@ search_result dict_try_get_entry(dict_key key)
     return (search_result){.value = out, .state = out ? TABLE1 : NOTFOUND};
 }
 
-// returns a result state containing dict_tv*
+// returns a result state containing dict_tv
 search_result dict_try_get(dict_key key)
 {
     search_result entry_result = dict_try_get_entry(key);
 
     search_result dict_tv_result = entry_result.state != NOTFOUND ? 
-    (search_result){.state = entry_result.state, .value = &(((dict_entry *)entry_result.value)->tv)} :
+    (search_result){.state = entry_result.state, .value = ((dict_entry *)entry_result.value)->tv} :
     (search_result){.state = entry_result.state, .value = NULL};
 
     return dict_tv_result;
@@ -79,9 +102,9 @@ void dict_set(dict_key key, dict_tv tv)
     }
     else
     {
-        dict_tv *const tv_ptr = ((dict_tv *const)dict_tv_result.value);
-        tv_ptr->type = tv.type;
-        tv_ptr->value = tv.value;
+        dict_tv const tv_ptr = ((dict_tv const)dict_tv_result.value);
+        tv_ptr->type = tv->type;
+        tv_ptr->value = tv->value;
     }
 }
 
