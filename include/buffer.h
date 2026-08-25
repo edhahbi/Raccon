@@ -1,8 +1,8 @@
 #pragma once
 #include "common.h"
 #include "command.h"
-#include "conn_state.h"
 #include "sdc.h"
+#include "state.h"
 #include <sys/socket.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,12 +23,12 @@ typedef struct
 } buffer;
 
 buffer buffer_init(size_t size);
-void buffer_free(buffer* buff);
+void buffer_free(buffer *buff);
 static inline size_t buffer_remaining(const buffer *buff) { return buff->capacity - buff->offset; }
 static inline size_t buffer_consumed(const buffer *buff) { return buff->offset; }
 static inline void buffer_reset(buffer *buff) { buff->offset = 0; }
 
-conn_state_t buffer_read(int sockfd, buffer* buff);
-conn_state_t buffer_write(int sockfd, buffer *buff);
-void buffer_sync(buffer* buff, size_t ps_index);
-void buffer_push(buffer* buff , const size_t size, const char* format, const void* response);
+conn_state buffer_read(int sockfd, buffer *const buff);
+conn_state buffer_write(int sockfd, buffer *const buff);
+void buffer_sync(buffer *const buff, size_t ps_index);
+void buffer_push(buffer *const buff, const size_t size, const char *format, const void *response);

@@ -6,6 +6,13 @@
 #include "command.h"
 #include "state.h"
 
+
+typedef struct parser_state_machine{
+    i64 multi_bulk_str;
+    i64 bulk_str;
+    token_type token_type;
+}parser_state_machine;
+
 typedef struct parser_ctx{
     size_t parser_index;
     size_t end_index;
@@ -14,7 +21,7 @@ typedef struct parser_ctx{
 
 typedef struct parser_result{
     command cmd;
-    state state;
+    parser_state state;
 }parser_result;
 
 void parser_ctx_init(parser_ctx* parser_state ,char* b_ptr, size_t end_idx);

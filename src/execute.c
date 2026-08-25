@@ -1,6 +1,6 @@
 #include "execute.h"
 
-void buffer_push_arg(buffer *buff, arg *arg)
+void buffer_push_arg(buffer *buff, token *arg)
 {
     switch (arg->type)
     {
@@ -50,17 +50,14 @@ dict_tv create_dict_tv(const size_t tv_idx)
     else
     {
         size_t prop_size = (cmd->argc - 2) / 2;
-        property *props = malloc(sizeof(property) * prop_size);
+        dict_tv tv = create_arg_obj(malloc(sizeof(property) * prop_size), prop_size);
         size_t index = 0;
         for (size_t prop_idx = tv_idx; prop_idx < cmd->argc - 1; prop_idx += 2)
         {
             property p = (property){.field = get_command_arg_string(prop_idx), .value = get_command_arg(prop_idx + 1)};
-            props[index] = p;
+            tv->value->object.properties[index] = p;
             index++;
         }
-
-        dict_tv tv = create_arg_obj(props, prop_size);
-        props = NULL;
         return tv;
     }
 }
@@ -70,7 +67,7 @@ void exec_SET()
     dict_key key = get_command_arg(1);
     dict_tv tv = create_dict_tv(2);
     dict_set(key, tv);
-    buffer_push(out, OK_LEN, "%s", "+OK\r\n");
+    buffer_push((buffer* const)out, OK_LEN, "%s", "+CMD_OK\r\n");
     LOG_DEBUG("kv pair has been set successfully");
 }
 
@@ -81,11 +78,11 @@ void exec_GET()
 
     if (result.state == NOTFOUND)
     {
-        buffer_push(out, NIL_LEN, "%s", "$-1\r\n");
+        buffer_push((buffer* const)out, NIL_LEN, "%s", "$-1\r\n");
         return;
     }
 
-    buffer_push_arg(out, (dict_tv const)result.value);
+    buffer_push_arg((buffer* const)out, (dict_tv const)result.value);
 }
 
 void exec_DEL()
@@ -94,101 +91,108 @@ void exec_DEL()
 
     if (dict_try_del(key))
     {
-        buffer_push(out, LEN_01, "%s", "+1\r\n");
+        buffer_push((buffer* const)out, LEN_01, "%s", "+1\r\n");
         return;
     }
 
-    buffer_push(out, LEN_01, "%s", "+0\r\n");
+    buffer_push((buffer* const)out, LEN_01, "%s", "+0\r\n");
 }
 
-bool valid_ping_cmd()
+cmd_result valid_ping_cmd()
 {
     const string *sdc = get_command_arg_string(0);
-    return cmd->argc == 1 && memcmp(sdc->ptr, "PING", sdc->size);
+
+    if (memcmp(sdc->ptr, "PING", sdc->size))
+        return (cmd_result){.state = CMD_NOT_CMD};
+
+    if (cmd->argc > 1)
+        return (cmd_result){.state = CMD_ERROR};
+
+    return (cmd_result){.state = CMD_OK, .exec_fn = exec_PING};
 }
 
 // SET STR_K VAL
 // SET STR_K VAL
-bool valid_set_cmd()
+cmd_result valid_set_cmd()
 {
     const string *sdc = get_command_arg_string(0);
-    if (cmd->argc < 3 || memcmp(sdc->ptr, "SET", sdc->size) != 0)
-        return false;
 
-    arg_type key_type = get_arg_type(1);
+    if (memcmp(sdc->ptr, "SET", sdc->size))
+        return (cmd_result){.state = CMD_NOT_CMD};
+
+    if (cmd->argc < 3)
+        return (cmd_result){.state = CMD_INCOMPLETE, .exec_fn = exec_SET};
+
+    token_type key_type = get_arg_type(1);
     if (key_type != RESP_STRING)
-        return false;
+        return (cmd_result){.state = CMD_ERROR};
 
     if (cmd->argc == 3)
-        return true;
+        return (cmd_result){.state = CMD_OK, .exec_fn = exec_SET};
 
     if (cmd->argc % 2 != 0)
-        return false;
+        return (cmd_result){.state = CMD_ERROR};
 
     for (size_t arg_idx = 2; arg_idx < cmd->argc; arg_idx += 2)
         if (get_arg_type(arg_idx) != RESP_STRING)
-            return false;
+            return (cmd_result){.state = CMD_ERROR};
 
-    return true;
+    return (cmd_result){.state = CMD_OK, .exec_fn = exec_SET};
 }
 
 // GET KEY
-bool valid_get_cmd()
+cmd_result valid_get_cmd()
 {
     const string *sdc = get_command_arg_string(0);
 
-    if (cmd->argc != 2 || memcmp(sdc->ptr, "GET", sdc->size))
-        return false;
+    if (memcmp(sdc->ptr, "GET", sdc->size))
+        return (cmd_result){.state = CMD_NOT_CMD};
 
-    return true;
+    if (cmd->argc < 2)
+        return (cmd_result){.state = CMD_INCOMPLETE, .exec_fn = exec_GET};
+
+    if (cmd->argc > 2)
+        return (cmd_result){.state = CMD_ERROR};
+
+    return (cmd_result){.state = CMD_OK, .exec_fn = exec_GET};
 }
 
 // DEL KEY
-bool valid_del_cmd()
+cmd_result valid_del_cmd()
 {
     const string *sdc = get_command_arg_string(0);
 
-    if (cmd->argc != 2 || memcmp(sdc->ptr, "DEL", sdc->size))
-        return false;
+    if (memcmp(sdc->ptr, "DEL", sdc->size))
+        return (cmd_result){.state = CMD_NOT_CMD};
 
-    return true;
+    if (cmd->argc < 2)
+        return (cmd_result){.state = CMD_INCOMPLETE, .exec_fn = exec_DEL};
+
+    if (cmd->argc > 2)
+        return (cmd_result){.state = CMD_ERROR};
+
+    return (cmd_result){.state = CMD_OK, .exec_fn = exec_DEL};
 }
 
-static inline bool valid_command_begining() { return get_arg_type(0) == RESP_STRING; }
-
-state exec_cmd()
+cmd_state exec_cmd()
 {
     if (!valid_command_begining())
-        return ERROR;
+        return CMD_ERROR;
 
-    if (valid_ping_cmd())
+    for (size_t i = 0; i < CMD_NUM; i++)
     {
-        exec_PING();
-        return OK;
+        cmd_result res = func_arr[i]();
+        if (res.state == CMD_OK)
+        {
+            res.exec_fn();
+            return CMD_OK;
+        }
     }
 
-    if (valid_set_cmd())
-    {
-        exec_SET();
-        return OK;
-    }
-
-    if (valid_get_cmd())
-    {
-        exec_GET();
-        return OK;
-    }
-
-    if (valid_del_cmd())
-    {
-        exec_DEL();
-        return OK;
-    }
-
-    return ERROR;
+    return CMD_ERROR;
 }
 
-state exec(const command *command, const buffer *outcoming)
+cmd_state exec(const command* command, const buffer* outcoming)
 {
     cmd = command;
     out = outcoming;

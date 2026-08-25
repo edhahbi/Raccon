@@ -30,12 +30,12 @@ void skip_error(){
 // be aware function introduces side effects (parser_index advancement)
 void consume_char(char c){
     if(ps->parser_index == ps->end_index){
-        ps_res->state = INCOMPLETE;
+        ps_res->state = PARSER_INCOMPLETE;
     }
     else if(get_current_char() != c){
-        ps_res->state = ERROR;
+        ps_res->state = PARSER_ERROR;
     }else{
-        ps_res->state = OK;
+        ps_res->state = PARSER_OK;
         ps->parser_index++;
     }
 }
@@ -44,7 +44,7 @@ void parse_crlf(){
     
     consume_char('\r');
 
-    if(ps_res->state != OK)
+    if(ps_res->state != PARSER_OK)
         return;
 
     consume_char('\n');
@@ -59,7 +59,7 @@ i64 parse_i64(){
 
     // overflow or no conversion took place
     if(errno == ERANGE || end_ptr == get_current_ptr()){
-        ps_res->state = ERROR;
+        ps_res->state = PARSER_ERROR;
         return 0;
     }
 
@@ -67,7 +67,7 @@ i64 parse_i64(){
 
     parse_crlf();
 
-    if(ps_res->state != OK)
+    if(ps_res->state != PARSER_OK)
         return 0;
     
     return int64;
@@ -84,7 +84,7 @@ void parse_double(){
 
     // overflow or no conversion took place
     if(errno == ERANGE || end_ptr == get_current_ptr()){
-        ps_res->state = ERROR;
+        ps_res->state = PARSER_ERROR;
         return;
     }
 
@@ -92,10 +92,10 @@ void parse_double(){
 
     parse_crlf();
 
-    if(ps_res->state != OK)
+    if(ps_res->state != PARSER_OK)
         return;
 
-    arg arg = create_arg(RESP_DOUBLE,&result,0);
+    token arg = create_token(RESP_DOUBLE,&result,sizeof(double));
     push_arg(&ps_res->cmd,arg);
     return;
 
@@ -106,17 +106,17 @@ void parse_simple_string(){
     
     size_t arg_begin = ps->parser_index;
 
-    while (get_current_char()!='\r' && ps_res->state == OK)
+    while (get_current_char()!='\r' && ps_res->state == PARSER_OK)
         consume_char(get_current_char());
 
     size_t arg_end = ps->parser_index;
 
     parse_crlf();
 
-    if(ps_res->state != OK)
+    if(ps_res->state != PARSER_OK)
         return;
     
-    arg arg = create_arg(RESP_STRING,ps->buffer_ptr + arg_begin, arg_end - arg_begin);
+    token arg = create_token(RESP_STRING,ps->buffer_ptr + arg_begin, arg_end - arg_begin);
     push_arg(&ps_res->cmd,arg);
 }
 
@@ -126,31 +126,31 @@ void parse_bulk_string(){
 
     size_t len = (size_t)parse_i64();
 
-    if(ps_res->state != OK)
+    if(ps_res->state != PARSER_OK)
         return;
 
     size_t i = 0;
     size_t arg_begin = ps->parser_index;
-    while (i<len && ps_res->state == OK){
+    while (i<len && ps_res->state == PARSER_OK){
         consume_char(get_current_char());
         i++;
     }
     
-    if(ps_res->state != OK)
+    if(ps_res->state != PARSER_OK)
         return;
     
     parse_crlf();
 
-    if(ps_res->state != OK)
+    if(ps_res->state != PARSER_OK)
         return;
 
-    arg arg = create_arg(RESP_STRING,ps->buffer_ptr + arg_begin, len);   
+    token arg = create_token(RESP_STRING,ps->buffer_ptr + arg_begin, len);   
     push_arg(&ps_res->cmd,arg);
 }
 
 void parse_argument(){
     if(ps->parser_index == ps->end_index){
-        ps_res->state = INCOMPLETE;
+        ps_res->state = PARSER_INCOMPLETE;
         return;
     }
 
@@ -159,10 +159,10 @@ void parse_argument(){
         case ':':
             i64 int64 = parse_i64();
 
-            if(ps_res->state != OK)
+            if(ps_res->state != PARSER_OK)
                 return;
 
-            arg a = create_arg(RESP_INT64, &int64,sizeof(i64));
+            token a = create_token(RESP_INT64, &int64,sizeof(i64));
             push_arg(&ps_res->cmd,a);
             break;
 
@@ -190,12 +190,12 @@ void parse_multi_bulk_string(){
 
     size_t len = (size_t)parse_i64();
 
-    if(ps_res->state != OK)
+    if(ps_res->state != PARSER_OK)
         return;
 
     for (size_t i = 0; i < len; i++){
         parse_argument();
-        if(ps_res->state != OK)
+        if(ps_res->state != PARSER_OK)
             return;
     }
     
@@ -217,16 +217,16 @@ void parse_begin(){
         parse_multi_bulk_string();
         break;
     default:
-        ps_res->state = ERROR;
+        ps_res->state = PARSER_ERROR;
         break;
     }
 }
 
 void handle_parser_result(buffer* incoming){
-    if(ps_res->state == INCOMPLETE)
+    if(ps_res->state == PARSER_INCOMPLETE)
         return;
 
-    if(ps_res->state == ERROR){
+    if(ps_res->state == PARSER_ERROR){
         skip_error();
     }
 

@@ -1,46 +1,46 @@
 #pragma once
 #include "sdc.h"
 #include "obj.h"
+#include "state.h"
 
-typedef enum command_type{
-    PING,
-    SET,
-    GET,
-    DEL
-}command_type;
-
-typedef enum arg_type
+typedef enum token_type
 {
     RESP_BOOLEAN,
     RESP_INT64,
     RESP_STRING,
     RESP_OBJECT,
     RESP_DOUBLE
-} arg_type;
+} token_type;
 
-typedef union arg_value
+typedef union token_value
 {
     object object;
     i64 int64;
     string str;
     bool b;
     double d;
-} arg_value;
+} token_value;
 
-typedef struct arg
+typedef struct token
 {
-    arg_type type;
-    arg_value* value;
-} arg;
+    token_type type;
+    token_value* value;
+} token;
 
 typedef struct command
 {
     size_t argc;
-    arg* argv;
+    token* argv;
 } command;
+
+typedef struct cmd_result {
+    cmd_state state;
+    void (*exec_fn)();
+}cmd_result;
 
 void command_init(command*);
 void command_cleanup(command*);
-arg create_arg(arg_type, void *, size_t);
-arg* create_arg_obj(const property* const ps, size_t);
-void push_arg(command *, arg);
+void command_dispose(command*);
+token create_token(token_type, void *, size_t);
+token* create_arg_obj(const property* const ps, size_t);
+void push_arg(command *, token);

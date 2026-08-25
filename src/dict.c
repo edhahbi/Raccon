@@ -98,7 +98,7 @@ void dict_set(dict_key key, dict_tv tv)
         dict_entry *const new_entry = create_entry(key, tv);
         add_entry(db.ht[db.rehasing_flag], final_hash, new_entry);
         db.ht[db.rehasing_flag]->used++;
-        dict_rehash(true);
+        dict_continue_rehash(BIG_REHASH);
     }
     else
     {
@@ -145,7 +145,7 @@ bool dict_try_del(dict_key key)
     if (probably_in_t0(hash_t0) && try_del_entry(db.ht[0], key, hash_t0))
     {
         db.ht[0]->used--;
-        dict_rehash(true);
+        dict_continue_rehash(SMALL_REHASH);
         return true;
     }
 
@@ -153,7 +153,7 @@ bool dict_try_del(dict_key key)
     if (try_del_entry(db.ht[1], key, hash_t1))
     {
         db.ht[1]->used--;
-        dict_rehash(true);
+        dict_continue_rehash(SMALL_REHASH);
         return true;
     }
 
@@ -191,47 +191,55 @@ void dict_insert_in_block(dict_entry **block, dict_entry *entry_t0)
     entry_t1->next = entry_t0;
 }
 
-void dict_rehash(bool start_rehash)
+void dict_rehash(){
+    dict_entry **block_t0 = dict_get_block(0, db.rehasing);
+    dict_entry *entry_t0 = *block_t0;
+
+    while (entry_t0)
+    {
+        size_t hash_t1 = get_hash(db.ht[1]->size, fnv_1a(entry_t0->key));
+        dict_entry **block_t1 = dict_get_block(1, hash_t1);
+        dict_insert_in_block(block_t1, entry_t0);
+        entry_t0 = entry_t0->next;
+    }
+
+    *block_t0 = NULL;
+
+    db.rehasing++;
+
+    if (db.rehasing == db.ht[0]->size)
+        stop_rehashing();
+    
+}
+
+void dict_continue_rehash(rehash_flag flag)
 {
-
-    if (!start_rehash)
+    if (db.rehasing_flag){
+        dict_rehash();
         return;
-
-    size_t br = db.ht[0]->size >> BIG_REHASH_SHIFT;
-    if (db.ht[0]->used >= br)
-    {
-        db.rehasing_flag = 1;
-        resize(db.ht[1], db.ht[1]->size << DEFAULT_RESIZE_SHIFT);
     }
-
-    size_t sr = db.ht[0]->size >> SMALL_REHASH_SHIT;
-    if (db.ht[1]->used <= sr)
+        
+    switch (flag)
     {
-        db.rehasing = 1;
-        resize(db.ht[1], db.ht[1]->size >> DEFAULT_RESIZE_SHIFT);
-    }
-
-    if (db.rehasing_flag)
-    {
-        dict_entry **block_t0 = dict_get_block(0, db.rehasing);
-        dict_entry *entry_t0 = *block_t0;
-
-        while (entry_t0)
+    case BIG_REHASH:
+        size_t br = db.ht[0]->size >> BIG_REHASH_SHIFT;
+        if (db.ht[0]->used >= br)
         {
-            size_t hash_t1 = get_hash(db.ht[1]->size, fnv_1a(entry_t0->key));
-            dict_entry **block_t1 = dict_get_block(1, hash_t1);
-            dict_insert_in_block(block_t1, entry_t0);
-            entry_t0 = entry_t0->next;
+            db.rehasing_flag = 1;
+            resize(db.ht[1], db.ht[1]->size << DEFAULT_RESIZE_SHIFT);
         }
+        break;
 
-        *block_t0 = NULL;
-
-        db.rehasing++;
-
-        if (db.rehasing == db.ht[0]->size)
+    case SMALL_REHASH:
+        size_t sr = db.ht[0]->size >> SMALL_REHASH_SHIT;
+        if (db.ht[1]->used <= sr)
         {
-            stop_rehashing();
+            db.rehasing = 1;
+            resize(db.ht[1], db.ht[1]->size >> DEFAULT_RESIZE_SHIFT);
         }
-        return;
+        break;
+
+    default:
+        break;
     }
 }

@@ -5,8 +5,8 @@
 #define DEFAULT_TABLE_SIZE 8 // always power of 2
 #define DEFAULT_RESIZE_SHIFT 1
 
-typedef arg* dict_tv;
-typedef arg* dict_key;
+typedef token* dict_tv;
+typedef token* dict_key;
 
 typedef struct property{
     string* field;
