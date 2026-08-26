@@ -10,8 +10,8 @@ void dict_init()
     db.ht[1] = dict_ht_init();
 }
 
-const dict_entry *try_lookup(
-    const dict_entry *iter,
+dict_entry *try_lookup(
+    dict_entry *iter,
     dict_key key)
 {
 
@@ -35,15 +35,14 @@ search_result dict_try_get_entry(dict_key key)
     size_t fnv_hash = fnv_1a(key);
     size_t hash_t0 = get_hash(db.ht[0]->size, fnv_hash);
 
-    // const needs to be droped for dict_set to write to it
     if (probably_in_t0(hash_t0))
     {
-        dict_entry *out = (dict_entry *)try_lookup(*dict_get_block(0, hash_t0), key);
+        dict_entry *out = try_lookup(*dict_get_block(0, hash_t0), key);
         return (search_result){.value = out, .state = out ? TABLE0 : NOTFOUND};
     }
 
     size_t hash_t1 = get_hash(db.ht[1]->size, fnv_hash);
-    dict_entry *out = (dict_entry *)try_lookup(*dict_get_block(1, hash_t1), key);
+    dict_entry *out = try_lookup(*dict_get_block(1, hash_t1), key);
     return (search_result){.value = out, .state = out ? TABLE1 : NOTFOUND};
 }
 

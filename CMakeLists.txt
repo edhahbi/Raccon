@@ -22,29 +22,29 @@ file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS
 )
 
 # Test executable
-add_executable(evl_test
-    ${PROJECT_SOURCE_DIR}/tests/evl_test.c
+add_executable(raccon
+    ${PROJECT_SOURCE_DIR}/main.c
     ${SOURCES}
     ${HEADERS}
 )
 
-target_include_directories(evl_test PRIVATE
+target_include_directories(raccon PRIVATE
     ${PROJECT_SOURCE_DIR}
     ${PROJECT_SOURCE_DIR}/include
 )
 
-target_compile_options(evl_test PRIVATE
+target_compile_options(raccon PRIVATE
     -Wall
     -Wextra
     -Wpedantic
 )
 
 # Debug flags
-target_compile_options(evl_test PRIVATE
+target_compile_options(raccon PRIVATE
     $<$<CONFIG:Debug>:-g3 -O0>
 )
 
 # Release flags
-target_compile_options(evl_test PRIVATE
+target_compile_options(raccon PRIVATE
     $<$<CONFIG:Release>:-O3>
 )

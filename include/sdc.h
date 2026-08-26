@@ -5,7 +5,7 @@
 #include <stdlib.h>
 
 typedef struct string{
-    unsigned char* ptr;
+    char* ptr;
     size_t size;
 }string;
 
