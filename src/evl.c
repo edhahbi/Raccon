@@ -3,14 +3,16 @@
 
 static event_t ev_config;
 
-int socket_add(const event_loop_t* evl,u32 sockfd){
+int socket_add(const event_loop_t *evl, u32 sockfd)
+{
     ev_config.data.fd = sockfd;
     ev_config.events = evl->_flags;
-    return epoll_ctl(evl->_epollfd,EPOLL_CTL_ADD,sockfd,&ev_config);
+    return epoll_ctl(evl->_epollfd, EPOLL_CTL_ADD, sockfd, &ev_config);
 }
 
-int socket_remove(const event_loop_t* evl, u32 sockfd){
-    return epoll_ctl(evl->_epollfd,EPOLL_CTL_DEL,sockfd,NULL);   
+int socket_remove(const event_loop_t *evl, u32 sockfd)
+{
+    return epoll_ctl(evl->_epollfd, EPOLL_CTL_DEL, sockfd, NULL);
 }
 
 void init_event_loop(event_loop_t *evl, socket_t *listen_sock, u32 event_flags)
@@ -22,24 +24,27 @@ void init_event_loop(event_loop_t *evl, socket_t *listen_sock, u32 event_flags)
     }
     evl->_flags = event_flags;
     evl->_listensock = listen_sock;
-    if(socket_add(evl,evl->_listensock->_sockfd) == -1){
+    if (socket_add(evl, evl->_listensock->_sockfd) == -1)
+    {
         LOG_ERROR("failed to register listening socket %d with epoll", evl->_listensock->_sockfd);
         exit(EXIT_FAILURE);
     }
 }
 
-void handle_accept(event_loop_t* evl, int sockfd)
+void handle_accept(event_loop_t *evl, int sockfd)
 {
     int client = socket_accept(sockfd);
-    if(client < 0){
+    if (client < 0)
+    {
         LOG_ERROR("failed to accept a client connection from listening socket %d", sockfd);
         return;
     }
 
-    conn_t* conn = &evl->_conns[client];
+    conn_t *conn = &evl->_conns[client];
     conn_init(conn);
 
-    if(socket_add(evl,client) == -1){
+    if (socket_add(evl, client) == -1)
+    {
         LOG_ERROR("failed to register accepted client socket %d with epoll", client);
         return;
     }
@@ -47,27 +52,35 @@ void handle_accept(event_loop_t* evl, int sockfd)
     LOG_INFO("accepted client socket %d and added it to the connection table", client);
 }
 
-void handle_request(event_loop_t* evl,int sockfd){
-    conn_t* conn = &evl->_conns[sockfd];
-    conn_state state = buffer_read(sockfd,&conn->_conn_ctx.incoming);
+void handle_request(event_loop_t *evl, int sockfd)
+{
+    conn_t *conn = &evl->_conns[sockfd];
+    conn_state state = buffer_read(sockfd, &conn->_conn_ctx.incoming);
 
-    if(state == CONN_ERROR || state == CONN_CLOSED){
-        if(socket_remove(evl,sockfd) == -1){
+    if (state == CONN_ERROR || state == CONN_CLOSED)
+    {
+        if (socket_remove(evl, sockfd) == -1)
+        {
             LOG_ERROR("failed to remove socket %d from epoll after read state %d", sockfd, state);
         }
         close(sockfd);
         conn_reset(conn);
-    }else{
+    }
+    else
+    {
         dispatch(conn);
     }
 }
 
-void handle_response(event_loop_t* evl, int sockfd){
-    conn_t* conn = &evl->_conns[sockfd];
+void handle_response(event_loop_t *evl, int sockfd)
+{
+    conn_t *conn = &evl->_conns[sockfd];
     conn_state state = buffer_write(sockfd, &conn->_conn_ctx.outcoming);
 
-    if(state == CONN_ERROR || state == CONN_CLOSED){
-        if(socket_remove(evl,sockfd) == -1){
+    if (state == CONN_ERROR || state == CONN_CLOSED)
+    {
+        if (socket_remove(evl, sockfd) == -1)
+        {
             LOG_ERROR("failed to remove socket %d from epoll after read state %d", sockfd, state);
         }
         close(sockfd);
@@ -86,16 +99,13 @@ void start_event_loop(event_loop_t *evl)
         {
             int sockfd = evl->_events[i].data.fd;
             u32 flags = evl->_events[i].events;
-            if (sockfd == evl->_listensock->_sockfd){
+            if (sockfd == evl->_listensock->_sockfd)
                 handle_accept(evl, sockfd);
-            }else if(flags & EPOLLIN){
-                handle_request(evl,sockfd);
-            }else if(flags & EPOLLOUT){
+            else if (flags & EPOLLIN)
+                handle_request(evl, sockfd);
+            else if (flags & EPOLLOUT)
                 handle_response(evl, sockfd);
-            }
-        }  
-        dict_continue_rehash(NO_START_REHASH);  
+        }
+        dict_continue_rehash(NO_START_REHASH);
     }
 }
-
-
