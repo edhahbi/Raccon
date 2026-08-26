@@ -204,7 +204,7 @@ void parse_multi_bulk_string(){
 
 void parse_begin(){
     char c = ps->buffer_ptr[ps->parser_index];
-    switch (c)
+        switch (c)
     {
     case '+' :
         parse_simple_string();

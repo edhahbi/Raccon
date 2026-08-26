@@ -122,17 +122,36 @@ conn_state buffer_write(int socketfd, buffer *const buff)
     }
 }
 
-void buffer_push(buffer *const buff, size_t size, const char *format, ...)
+void buffer_push(buffer *const buff, size_t size, const char *format, const void* src, token_type type)
 {
     if (buff->offset + size + 1 > buff->capacity)
 
         buffer_resize(buff, size + 1);
 
-    va_list args;
+    int written;
     
-    va_start(args,format);
+    switch (type)
+    {
 
-    int written = snprintf(buff->ptr + buff->offset, size + 1, format, args);
+    case RESP_INT64:
+        i64 s_i64 = *(const i64*)src;
+        written = snprintf(buff->ptr + buff->offset, size + 1, format, s_i64);
+        break;
+    
+    case RESP_DOUBLE:
+        double s_double = *(const double*)src;
+        written = snprintf(buff->ptr + buff->offset, size + 1, format, s_double);
+        break;
+        
+    case RESP_STRING:
+        written = snprintf(buff->ptr + buff->offset, size + 1, format, (const char*) src);
+        break;
+    
+    default:
+        LOG_ERROR("unspported type");
+        exit(1);
+    }
+    
 
     if(written >= 0)
         buff->offset += size;

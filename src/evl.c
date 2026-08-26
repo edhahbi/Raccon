@@ -98,13 +98,14 @@ void start_event_loop(event_loop_t *evl)
         for (u32 i = 0; i < nfds; i++)
         {
             int sockfd = evl->_events[i].data.fd;
+
             u32 flags = evl->_events[i].events;
-            if (sockfd == evl->_listensock->_sockfd)
-                handle_accept(evl, sockfd);
-            else if (flags & EPOLLIN)
-                handle_request(evl, sockfd);
-            else if (flags & EPOLLOUT)
-                handle_response(evl, sockfd);
+
+            if (sockfd == evl->_listensock->_sockfd) handle_accept(evl, sockfd);
+
+            else if (flags & EPOLLIN) handle_request(evl, sockfd);
+            
+            else if (flags & EPOLLOUT) handle_response(evl, sockfd);
         }
         dict_continue_rehash(NO_START_REHASH);
     }

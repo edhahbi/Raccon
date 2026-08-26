@@ -13,29 +13,21 @@ void push_arg(command* command, token arg){
 token create_token(token_type type, void* val, size_t size){
     token a = (token){.type = type};
     a.value = malloc(size);
-    switch (type)
-    {
-    
-    case RESP_INT64 || RESP_BOOLEAN || RESP_DOUBLE:
-        a.value = val;
-        break;
 
-
-    case RESP_STRING:
+    if(type & (RESP_INT64 | RESP_DOUBLE | RESP_BOOLEAN))
+        memcpy(a.value,val,size);
+    else if(type & RESP_STRING){
         string* sdc = a.value;
         *sdc = sdc_init(val,size);
-        break;
-
-    case RESP_OBJECT:
+    }else if(type & RESP_OBJECT){
         object* obj = a.value;
         obj->size = size;
         obj->properties = val;
-        break;
-
-    default:
+    }else{
         LOG_ERROR("Invalid arg type");
         exit(EXIT_FAILURE);
     }
+
     return a;
 }
 

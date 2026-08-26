@@ -5,11 +5,11 @@
 
 typedef enum token_type
 {
-    RESP_BOOLEAN,
-    RESP_INT64,
-    RESP_STRING,
-    RESP_OBJECT,
-    RESP_DOUBLE
+    RESP_BOOLEAN = 1,
+    RESP_INT64 = 2,
+    RESP_STRING = 4,
+    RESP_OBJECT = 8,
+    RESP_DOUBLE = 16
 } token_type;
 
 typedef struct token

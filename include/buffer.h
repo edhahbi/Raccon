@@ -31,4 +31,4 @@ static inline void buffer_reset(buffer *buff) { buff->offset = 0; }
 conn_state buffer_read(int sockfd, buffer *const buff);
 conn_state buffer_write(int sockfd, buffer *const buff);
 void buffer_sync(buffer *const buff, size_t ps_index);
-void buffer_push(buffer *const buff, const size_t size, const char *format, ...);
+void buffer_push(buffer *const buff, const size_t size, const char *format, const void* src, token_type type);

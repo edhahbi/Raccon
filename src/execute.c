@@ -8,20 +8,23 @@ void buffer_push_arg(buffer *buff, token *arg)
         const char *c =
             *((bool *)arg->value) ? "1" : "0";
 
-        buffer_push(buff, sizeof(char) + 3, "#%c\r\n", c);
+        buffer_push(buff, 1, "#%s\r\n", c, RESP_BOOLEAN);
         break;
 
     case RESP_DOUBLE:
-        buffer_push(buff, sizeof(double) + 3, ",%f\r\n", (double *)arg->value);
+        buffer_push(buff, sizeof(double) + 3, ",%f\r\n", arg->value, RESP_DOUBLE);
         break;
 
     case RESP_INT64:
-        buffer_push(buff, sizeof(i64) + 3, ":%lld\r\n", (i64 *)arg->value);
+            LOG_DEBUG("%ld",*(i64*)arg->value);
+            buffer_push(buff, sizeof(i64) + 3, ":%ld\r\n", arg->value, RESP_INT64);
         break;
 
     case RESP_STRING:
-        string *sdc = (string *)arg->value;
-        buffer_push(buff, sdc->size + sizeof(i64) + 5, "$%d\r\n%s\r\n", sdc->size, sdc->ptr);
+        const string * sdc = (string *)arg->value;
+        buffer_push(buff, sizeof(i64) + 3, "$%ld\r\n",&sdc->size, RESP_INT64);
+        buffer_push(buff, sdc->size,"%s", sdc->ptr, RESP_STRING);
+        buffer_push(buff,2,"%s","\r\n", RESP_STRING);
         break;
 
     case RESP_OBJECT:
@@ -40,7 +43,8 @@ void buffer_push_arg(buffer *buff, token *arg)
     }
 }
 
-void exec_PING() { buffer_push((buffer *const)out, PONG_LEN, "%s", "+PONG\r\n"); }
+void exec_PING() { buffer_push(out, PONG_LEN, "%s", "+PONG\r\n",RESP_STRING); }
+
 
 dict_tv create_dict_tv(const size_t tv_idx)
 {
@@ -74,7 +78,7 @@ void exec_SET()
     dict_key key = get_command_arg(1);
     dict_tv tv = create_dict_tv(2);
     dict_set(key, tv);
-    buffer_push((buffer *const)out, OK_LEN, "%s", "+OK\r\n");
+    buffer_push(out, OK_LEN, "%s", "+OK\r\n",RESP_STRING);
     LOG_DEBUG("kv pair has been set successfully");
 }
 
@@ -85,11 +89,11 @@ void exec_GET()
 
     if (result.state == NOTFOUND)
     {
-        buffer_push((buffer *const)out, NIL_LEN, "%s", "$-1\r\n");
+        buffer_push(out, NIL_LEN, "%s", "$-1\r\n", RESP_STRING);
         return;
     }
 
-    buffer_push_arg((buffer *const)out, (dict_tv const)result.value);
+    buffer_push_arg(out, (dict_tv const)result.value);
 }
 
 void exec_DEL()
@@ -98,11 +102,11 @@ void exec_DEL()
 
     if (dict_try_del(key))
     {
-        buffer_push((buffer *const)out, LEN_01, "%s", "+1\r\n");
+        buffer_push(out, LEN_01, "%s", "+1\r\n", RESP_STRING);
         return;
     }
 
-    buffer_push((buffer *const)out, LEN_01, "%s", "+0\r\n");
+    buffer_push(out, LEN_01, "%s", "+0\r\n", RESP_STRING);
 }
 
 cmd_result valid_ping_cmd()

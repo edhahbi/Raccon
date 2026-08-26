@@ -1,6 +1,7 @@
 #pragma once
 #include "conn.h"
 #include "dict.h"
+#include <inttypes.h>
 
 #define PONG_LEN 7
 #define OK_LEN 5

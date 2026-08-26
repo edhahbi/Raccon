@@ -2,12 +2,12 @@
 
 void handle_parsing_error(conn_t *connection)
 {
-    buffer_push(&connection->_conn_ctx.outcoming, PARSER_ERR_MSG_LEN, "%s", "-Err Parsing Error\r\n");
+    buffer_push(&connection->_conn_ctx.outcoming, PARSER_ERR_MSG_LEN, "%s", "-Err Parsing Error\r\n", RESP_STRING);
 }
 
 void handle_execution_error(conn_t *connection)
 {
-    buffer_push(&connection->_conn_ctx.outcoming, EXCUTOR_ERR_MSG_LEN, "%s", "-Err Execution Error\r\n");
+    buffer_push(&connection->_conn_ctx.outcoming, EXCUTOR_ERR_MSG_LEN, "%s", "-Err Execution Error\r\n", RESP_STRING);
 }
 
 void dispatch(conn_t *connection)
