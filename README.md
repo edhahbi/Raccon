@@ -47,29 +47,14 @@ You can interact using `nc`/`telnet` or a RESP-capable client. Example using `nc
 printf "*1\r\n$4\r\nPING\r\n" | nc 127.0.0.1 8080
 ```
 
-SET/GET example (bulk-string form):
-
-```bash
-printf "*3\r\n$3\r\nSET\r\n$3\r\nkey\r\n$5\r\nvalue\r\n" | nc 127.0.0.1 8080
-printf "*2\r\n$3\r\nGET\r\n$3\r\nkey\r\n" | nc 127.0.0.1 8080
-```
-
 ## Protocol notes
 Raccon implements a subset of a RESP-like protocol:
 - Simple strings: `+OK\r\n`
 - Bulk strings: `$<len>\r\n<payload>\r\n`
 - Integers: `:<number>\r\n`
+- Doubles : `,<number>\r\n`
+- Boolean : `#<bool>\r\n`
 - Multi-bulk arrays to compose commands: `*<n>\r\n` followed by n elements
 
 Parser and command validation live in `src/parser.c` and `src/execute.c`.
 
-## Contributing & Next steps
-- Add tests under `tests/` and update CMakeLists to run them.
-- Add graceful shutdown handling and signal handling in `main.c`.
-- Improve error handling and add more commands (INCR, KEYS, TTL, etc.).
-
-## License
-Unspecified. Add a `LICENSE` file if you intend to publish.
-
----
-If you'd like, I can: update the CMakeLists to build a `raccon` binary name, add a `Makefile` wrapper, or generate README examples with an automated test. Which would you prefer next?
