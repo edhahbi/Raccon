@@ -27,6 +27,8 @@ typedef struct dictht
     size_t used;
 } dictht;
 
+size_t fnv_1a(const dict_key key);
+
 dictht* dict_ht_init();
 dict_entry* create_entry(dict_key, dict_tv);
 bool compare_keys(dict_key, dict_key);

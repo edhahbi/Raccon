@@ -12,25 +12,24 @@ void push_arg(command* command, token arg){
 
 token create_token(token_type type, void* val, size_t size){
     token a = (token){.type = type};
-    a.value = malloc(sizeof(token_value));
+    a.value = malloc(size);
     switch (type)
     {
     
-    case RESP_INT64:
-        a.value->int64 = *(i64*)val;
+    case RESP_INT64 || RESP_BOOLEAN || RESP_DOUBLE:
+        a.value = val;
         break;
 
-    case RESP_BOOLEAN:
-        a.value->b = *(bool*)val;
-        break;
-    
+
     case RESP_STRING:
-        a.value->str = sdc_init(val,size);
+        string* sdc = a.value;
+        *sdc = sdc_init(val,size);
         break;
 
     case RESP_OBJECT:
-        a.value->object.size = size;
-        a.value->object.properties = val;
+        object* obj = a.value;
+        obj->size = size;
+        obj->properties = val;
         break;
 
     default:
@@ -42,11 +41,13 @@ token create_token(token_type type, void* val, size_t size){
 
 token* create_arg_obj(const property* const val, size_t size){
     token* a = malloc(sizeof(token));
-    a->value = malloc(sizeof(token_value));
+    a->value = malloc(sizeof(object));
 
     a->type = RESP_OBJECT;
-    a->value->object.size = size;
-    a->value->object.properties = val;
+
+    object* obj = a->value;
+    obj->size = size;
+    obj->properties = val;
 
     return a;
 }
@@ -56,12 +57,12 @@ void command_cleanup(command* cmd){
     for (size_t i = 0; i < cmd->argc; i++){
         switch (cmd->argv[i].type)
         {
-        case RESP_INT64 || RESP_BOOLEAN:
+        case RESP_INT64 || RESP_BOOLEAN || RESP_DOUBLE:
             free(cmd->argv[i].value);            
             break;
         
         case RESP_STRING:
-            sdc_free(&cmd->argv[i].value->str);
+            sdc_free(cmd->argv[i].value);
             break;
 
         default:
@@ -78,5 +79,5 @@ void command_dispose(command* cmd){
     const token* temp = cmd->argv;
     cmd->argv++;
     cmd->argc--;
-    sdc_free(&temp->value->str);
+    sdc_free(temp->value);
 }

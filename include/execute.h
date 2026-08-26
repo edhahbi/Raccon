@@ -3,20 +3,20 @@
 #include "dict.h"
 
 #define PONG_LEN 7
-#define OK_LEN 6
-#define NIL_LEN 6
-#define PARSER_ERR_MSG_LEN 21
-#define EXCUTOR_ERR_MSG_LEN 23
-#define LEN_01 5
+#define OK_LEN 5
+#define NIL_LEN 5
+#define PARSER_ERR_MSG_LEN 20
+#define EXCUTOR_ERR_MSG_LEN 22
+#define LEN_01 4
 #define CMD_NUM 4
 
 static const buffer *out;
 static const command* cmd;
 
 static inline token* get_command_arg(const size_t idx) {return cmd->argv + idx;}
-static inline string *get_command_arg_string(const size_t idx){ return &cmd->argv[idx].value->str;}
-static inline i64 *get_command_arg_int64(const size_t idx){ return &cmd->argv[idx].value->int64;}
-static inline bool *get_command_arg_boolean(const size_t idx){ return &cmd->argv[idx].value->b;}
+static inline string *get_command_arg_string(const size_t idx){ return cmd->argv[idx].value;}
+static inline i64 *get_command_arg_int64(const size_t idx){ return cmd->argv[idx].value;}
+static inline bool *get_command_arg_boolean(const size_t idx){ return cmd->argv[idx].value;}
 static inline token_type get_arg_type(const size_t idx){return cmd->argv[idx].type;}
 static inline bool valid_command_begining() { return get_arg_type(0) == RESP_STRING; }
 

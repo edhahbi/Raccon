@@ -12,19 +12,10 @@ typedef enum token_type
     RESP_DOUBLE
 } token_type;
 
-typedef union token_value
-{
-    object object;
-    i64 int64;
-    string str;
-    bool b;
-    double d;
-} token_value;
-
 typedef struct token
 {
     token_type type;
-    token_value* value;
+    void* value;
 } token;
 
 typedef struct command

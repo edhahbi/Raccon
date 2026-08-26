@@ -1,26 +1,6 @@
 #include "dict.h"
 
 
-#define OFFSET 14695981039346656037ULL
-#define PRIME 1099511628211ULL
-
-
-size_t fnv_1a(const dict_key key){
-
-    if (key->type != RESP_STRING){
-        LOG_ERROR("unsupported key type");
-        exit(1);
-    }
-
-    u8* bytes = key->value->str.ptr;
-    size_t len = key->value->str.size; 
-    u64 hash = OFFSET;
-    for (size_t byte = 0; byte < len; byte++){
-        hash ^= bytes[byte];
-        hash *= PRIME;
-    }
-    return hash;
-}
 
 void dict_init()
 {

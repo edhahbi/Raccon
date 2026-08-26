@@ -70,13 +70,13 @@ conn_state buffer_read(int socketfd, buffer *const buff)
 void buffer_sync(buffer *const buff, size_t index)
 {
     if (index == buff->offset)
-    {
+
         buff->offset = 0;
-    }
+
     else
     {
         memmove(buff->ptr, buff->ptr + index, buff->offset - index);
-        buff->offset = buff->offset - index;
+        buff->offset -= index;
     }
 }
 
@@ -122,17 +122,20 @@ conn_state buffer_write(int socketfd, buffer *const buff)
     }
 }
 
-void buffer_push(buffer *const buff, size_t size, const char *format, const void *response)
+void buffer_push(buffer *const buff, size_t size, const char *format, ...)
 {
+    if (buff->offset + size + 1 > buff->capacity)
 
-    if (size > buff->capacity)
-    {
-        buffer_resize(buff, size);
-    }
+        buffer_resize(buff, size + 1);
 
-    snprintf(buff->ptr, size, format, response);
+    va_list args;
+    
+    va_start(args,format);
 
-    buff->offset += size;
+    int written = snprintf(buff->ptr + buff->offset, size + 1, format, args);
+
+    if(written >= 0)
+        buff->offset += size;
 }
 void buffer_free(buffer *const buff)
 {

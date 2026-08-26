@@ -157,6 +157,7 @@ void parse_argument(){
     char c = ps->buffer_ptr[ps->parser_index];
     switch (c){
         case ':':
+            consume_char(':');
             i64 int64 = parse_i64();
 
             if(ps_res->state != PARSER_OK)
